@@ -1,3 +1,14 @@
+/**
+ * MidiKeyboard — teclado virtual (2 oitavas, pitch bend, mod wheel, zoom).
+ *
+ * 🔗 Relacionamentos:
+ * - Renderizado por: `App.tsx` (aba Play > Teclado).
+ * - Expõe: `MidiKeyboardHandle` (openChannelPopup/openSettingsPopup),
+ *   acionado pelo `AppHeader` do App via `ref` (`keyboardRef.current?.open…`).
+ * - Dispara: `onNoteOn`/`onNoteOff` → `useAppHandlers.handleNoteOn/handleNoteOff`.
+ * - Dispara: `onPitchBend`/`onModWheel` → `midiManager.sendPitchBend/sendControlChange`.
+ * - Consome: `useVuMeter` via `VuMeterLive` não — o nível é externo.
+ */
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Activity, X, Maximize, MoveHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { tr } from '../i18n';
