@@ -30,10 +30,6 @@ export function useMidiDevices(notify: Notify) {
       if (mounted) void refresh();
     };
 
-    // Trata o `reason` corretamente:
-    // - 'reconnecting': NÃO faz refresh (evita spam de notificações a cada tentativa)
-    // - 'failed': avisa e faz refresh
-    // - 'lost' (ou ausente): avisa e faz refresh
     const handleDisconnect = (lost: MidiDestination, reason?: DisconnectReason) => {
       if (!mounted) return;
       if (reason === 'manual') {
@@ -72,10 +68,19 @@ export function useMidiDevices(notify: Notify) {
 
   const toggleConnect = useCallback(
     async (dest: MidiDestination) => {
-      if (midiManager.getConnectedDestinations().some((d) => d.id === dest.id)) {
-        await midiManager.disconnectOutput(dest.id);
-        notify(tr('Desconectado: {name}', { name: dest.displayName }), 'info', 2500);
+      const isConnected = midiManager.getConnectedDestinations().some((d) => d.id === dest.id);
+
+      if (isConnected) {
+        // Defensivo: na implementação atual, disconnectOutput nunca rejeita.
+        // Mantido para não virar unhandled rejection se o manager mudar.
+        try {
+          await midiManager.disconnectOutput(dest.id);
+          notify(tr('Desconectado: {name}', { name: dest.displayName }), 'info', 2500);
+        } catch (error) {
+          notify(tr('Erro ao desconectar: {message}', { message: errorMessage(error, tr('Erro desconhecido')) }), 'error', 4000);
+        }
       } else {
+        // Este SIM pode rejeitar (BLE connectOutput, device sem portas úteis).
         try {
           await midiManager.connectOutput(dest);
           notify(tr('Conectado a: {name}', { name: dest.displayName }), 'success', 2500);
@@ -83,20 +88,31 @@ export function useMidiDevices(notify: Notify) {
           notify(tr('Erro ao conectar: {message}', { message: errorMessage(error, tr('Erro desconhecido')) }), 'error', 4000);
         }
       }
-      void refresh();
+
+      try {
+        await refresh();
+      } catch {
+        // refresh() nunca rejeita na implementação atual. Silencioso por design.
+      }
     },
     [notify, refresh],
   );
 
   const disconnectAll = useCallback(async () => {
     try {
-      for (const dest of midiManager.getConnectedDestinations()) await midiManager.disconnectOutput(dest.id);
+      for (const dest of midiManager.getConnectedDestinations()) {
+        await midiManager.disconnectOutput(dest.id);
+      }
       if (midiManager.getBleServerActive()) await midiManager.stopBleServer();
       notify(tr('Todos os dispositivos desconectados.'), 'info', 2500);
     } catch (error) {
       notify(tr('Erro ao desconectar: {message}', { message: errorMessage(error, tr('Erro desconhecido')) }), 'error', 3500);
     } finally {
-      void refresh();
+      try {
+        await refresh();
+      } catch {
+        // idem
+      }
     }
   }, [notify, refresh]);
 
