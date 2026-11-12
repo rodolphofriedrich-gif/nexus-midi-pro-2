@@ -1,0 +1,45 @@
+/* =========================================================
+   BARRA DE STATUS MIDI (Inferior)
+   ========================================================= */
+
+.nexus-midi-status {
+  min-height: 34px;
+  color: var(--nexus-text-muted);
+  background: rgba(20, 26, 40, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  border-radius: 10px;
+}
+
+.nexus-tx-indicator {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #454f69;
+}
+
+/* Ciano = atividade MIDI em transmissão */
+.nexus-tx-indicator.is-active {
+  background: var(--nexus-accent);
+  box-shadow: 0 0 9px var(--nexus-accent);
+}
+
+.nexus-midi-status-value {
+  color: var(--nexus-text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.nexus-midi-status-empty {
+  color: var(--nexus-text-muted);
+  font-size: 10px;
+  font-style: italic;
+}
+
+.nexus-studio-label {
+  color: var(--nexus-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.15px;
+}

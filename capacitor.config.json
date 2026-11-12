@@ -1,0 +1,13 @@
+{
+  "appId": "com.midi.controller.keyboard",
+  "appName": "NexusMIDI Pro",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false,
+    "backgroundColor": "#0c1019"
+  }
+}

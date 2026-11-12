@@ -1,0 +1,15 @@
+/* NexusMIDI Pro — tema "Midnight Studio". Os estilos ficam em src/styles/, um arquivo por área. */
+@import "tailwindcss";
+
+@import "./styles/00-theme-tokens.css";
+@import "./styles/01-base.css";
+@import "./styles/02-scrollbars.css";
+@import "./styles/03-app-header.css";
+@import "./styles/04-connection-buttons.css";
+@import "./styles/05-dropdowns.css";
+@import "./styles/06-content-cards.css";
+@import "./styles/07-status-bar.css";
+@import "./styles/08-exit-modal.css";
+@import "./styles/09-toasts.css";
+@import "./styles/10-forms.css";
+@import "./styles/11-responsive.css";

@@ -1,0 +1,77 @@
+import { useState } from 'react';
+import { Sparkles, Music, Timer, Disc } from 'lucide-react';
+import type { ToastType } from '../hooks/useToast';
+import { tr } from '../i18n';
+import { ArpPanel } from './tools/ArpPanel';
+import { GeneralPanel } from './tools/GeneralPanel';
+import { LearnPanel } from './tools/LearnPanel';
+import { MetronomePanel } from './tools/MetronomePanel';
+import { PerformancePanel } from './tools/PerformancePanel';
+import { RecorderPanel } from './tools/RecorderPanel';
+
+export function ToolsScreen({ onStatus }: { onStatus: (message: string, type?: ToastType) => void }) {
+  const [activeTool, setActiveTool] = useState<'performance' | 'arp' | 'recorder' | 'metronome'>('performance');
+
+  const btnClass = (active: boolean) =>
+    `flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+      active ? 'bg-indigo-600 text-white shadow-sm' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]/50 hover:text-[var(--text-main)]'
+    }`;
+
+  const iconClass = (active: boolean) => (active ? 'text-white' : 'text-indigo-400/70');
+
+  return (
+    <div className="flex min-h-0 w-full flex-1 flex-col bg-[var(--bg-app)]">
+      
+      {/* SUB-ABAS DE FERRAMENTAS */}
+      <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 border-b border-[var(--border-color)] bg-[var(--bg-panel)] shrink-0">
+        <button onClick={() => setActiveTool('performance')} className={btnClass(activeTool === 'performance')}>
+          <Sparkles size={14} className={iconClass(activeTool === 'performance')} /> {tr('PERFORMANCE')}
+        </button>
+        <button onClick={() => setActiveTool('arp')} className={btnClass(activeTool === 'arp')}>
+          <Music size={14} className={iconClass(activeTool === 'arp')} /> {tr('ARRANJADOR')}
+        </button>
+        <button onClick={() => setActiveTool('recorder')} className={btnClass(activeTool === 'recorder')}>
+          <Disc size={14} className={iconClass(activeTool === 'recorder')} /> {tr('GRAVADOR')}
+        </button>
+        <button onClick={() => setActiveTool('metronome')} className={btnClass(activeTool === 'metronome')}>
+          <Timer size={14} className={iconClass(activeTool === 'metronome')} /> {tr('Metrônomo e MIDI Clock')}
+        </button>
+      </div>
+
+      {/* CONTEÚDO DA ABA ATIVA */}
+      <div className="custom-scrollbar min-h-0 w-full flex-1 overflow-y-auto p-2 sm:p-4 text-[var(--text-main)]">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-3 lg:grid-cols-2">
+          {activeTool === 'performance' && (
+            <>
+              <div className="flex flex-col gap-3">
+                <PerformancePanel />
+                <LearnPanel />
+              </div>
+              <div className="flex flex-col gap-3">
+                <GeneralPanel />
+              </div>
+            </>
+          )}
+
+          {activeTool === 'arp' && (
+            <div className="flex flex-col gap-3 lg:col-span-2">
+              <ArpPanel />
+            </div>
+          )}
+
+          {activeTool === 'recorder' && (
+            <div className="flex flex-col gap-3 lg:col-span-2">
+              <RecorderPanel onStatus={onStatus} />
+            </div>
+          )}
+
+          {activeTool === 'metronome' && (
+            <div className="flex flex-col gap-3 lg:col-span-2">
+              <MetronomePanel />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
