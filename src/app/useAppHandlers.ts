@@ -17,12 +17,8 @@ interface UseAppHandlersArgs {
   firstConnectedDeviceId: string | undefined;
 }
 
-/**
- * Handlers de alto nível do App: notas, sustain, panic, saída, refresh do roteador
- * e nova rota. Isolado para ser testável e para o App.tsx ficar só como composição.
- */
 export function useAppHandlers({
-  prefs,
+  prefs: _prefs,
   showMessage,
   setShowExit,
   setIsRouterRefreshing,
@@ -46,11 +42,11 @@ export function useAppHandlers({
   }, [showMessage]);
 
   const handleToggleSustain = useCallback(async () => {
-    const next = !prefs.sustain;
+    // Lê do store em vez de `prefs.sustain` para não recriar o callback a cada
+    // mudança de preferências. O callback é passado para header e teclado.
+    const next = !prefsStore.get().sustain;
     prefsStore.set({ sustain: next });
     try {
-      // O Sustain na UI é global: enviamos CC64 para TODOS os 16 canais para
-      // garantir que nenhum canal fique com o pedal "preso" após troca de canal.
       const jobs: Promise<unknown>[] = [];
       for (let ch = 1; ch <= 16; ch++) {
         jobs.push(midiManager.sendControlChange(ch, 64, next ? 127 : 0));
@@ -60,7 +56,7 @@ export function useAppHandlers({
     } catch (error) {
       showMessage(tr('Erro ao enviar Sustain: {message}', { message: error instanceof Error ? error.message : '' }), 'error', 2500);
     }
-  }, [prefs.sustain, showMessage]);
+  }, [showMessage]);
 
   const handlePanic = useCallback(async () => {
     try {
@@ -92,10 +88,16 @@ export function useAppHandlers({
     setIsRouterRefreshing(true);
     try {
       await refreshDevices();
+    } catch (error) {
+      // Defensivo: na implementação atual, refreshDevices nunca rejeita
+      // (MidiConnectionManager engole o erro e devolve cache). Mantido para
+      // não quebrar caso o manager passe a propagar erros no futuro.
+      console.warn('[useAppHandlers] refresh do roteador falhou:', error);
+      showMessage(tr('Falha ao atualizar dispositivos MIDI'), 'error', 2500);
     } finally {
       setIsRouterRefreshing(false);
     }
-  }, [refreshDevices, setIsRouterRefreshing]);
+  }, [refreshDevices, setIsRouterRefreshing, showMessage]);
 
   const addNewRoute = useCallback(() => {
     midiManager.addRoute({ sourceId: VIRTUAL_ID, destinationId: firstConnectedDeviceId ?? '' });
