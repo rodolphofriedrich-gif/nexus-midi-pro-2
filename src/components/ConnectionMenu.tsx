@@ -49,7 +49,8 @@ export function ConnectionMenu(props: Props) {
         type="button"
         aria-expanded={isOpen}
         onClick={props.onToggleOpen}
-        className={`nexus-connection-button flex h-10 w-full items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] px-3 transition-colors hover:bg-[var(--bg-elevated)] ${isConnected ? 'text-[var(--nexus-success)]' : 'text-[var(--text-main)]'}`}
+        /* ALTERAÇÃO AQUI: Removida a classe 'nexus-connection-button' */
+        className={`flex h-10 w-full items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] px-3 transition-colors hover:bg-[var(--bg-elevated)] ${isConnected ? 'text-[var(--nexus-success)]' : 'text-[var(--text-main)]'}`}
       >
         <span className="flex items-center justify-center">
           <Icon size={18} strokeWidth={1.8} />
