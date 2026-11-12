@@ -101,7 +101,7 @@ jobs:
           npm run build:android
           npx cap sync android
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Compilar APK de Debug
         working-directory: android
