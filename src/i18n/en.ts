@@ -143,6 +143,7 @@ export const en: Record<string, string> = {
   "Exportar .mid": "Export .mid",
   "Falha ao enviar MIDI: {message}": "Failed to send MIDI: {message}",
   "Falha ao reconectar a \"{name}\".": "Failed to reconnect to \"{name}\".",
+  "Falha ao atualizar dispositivos MIDI": "Failed to refresh MIDI devices",
   "Falha desconhecida": "Unknown failure",
   "Falha na busca": "Scan failed",
   "Falha no MIDI Panic": "MIDI Panic failed",
