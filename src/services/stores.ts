@@ -1,3 +1,16 @@
+/**
+ * stores.ts — stores globais (persistidos + memória) do app.
+ *
+ * 🔗 Relacionamentos:
+ * - `prefsStore`      → consumido por `App.tsx` e `useAppHandlers.ts`.
+ * - `padsStore`       → consumido por `MidiPadGrid.tsx`.
+ * - `toolsStore`      → consumido por `PerformancePanel.tsx`, `ArpPanel.tsx`, `MetronomePanel.tsx`.
+ * - `runtimeStore`    → (memória) `ArpPanel.tsx`, `MetronomePanel.tsx`.
+ * - `channelsStore` / `channelSettingsStore` → painéis do Mixer/CC.
+ * - `synthSettingsStore` → alimenta `synthService.applyGlobalSettings/applyChannelSettings`.
+ * - `learnStore`      → consumido por `LearnPanel.tsx`.
+ * - Os tipos `SynthSettings`/`ChannelSettings`/`GlobalSettings` vêm de `synthTypes.ts`.
+ */
 import { clampInt } from '../lib/midiMath';
 import { createMemoryStorage, createStore } from '../lib/storeCore';
 import type { ArpConfig } from '../lib/arpeggiator';
@@ -255,8 +268,6 @@ export const padsStore = createStore<PadsState>('nexusmidi.pads', { banks: DEFAU
     return { banks: DEFAULT_BANKS };
   },
   sanitize: (state) => {
-    // Sanitização PROFUNDA: valida 4 bancos × 16 pads.
-    // Se qualquer nível estiver corrompido, cai no fallback (default).
     if (!Array.isArray(state.banks) || state.banks.length !== 4) return { banks: DEFAULT_BANKS };
     const banks: PadData[][] = [];
     for (let b = 0; b < 4; b++) {
