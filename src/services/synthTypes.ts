@@ -1,4 +1,11 @@
-/** Contratos entre o SynthService (lógica) e o backend de áudio (Web Audio + SpessaSynth). */
+/**
+ * synthTypes — contratos entre SynthService e o backend de áudio (SpessaSynth).
+ *
+ * 🔗 Relacionamentos:
+ * - Implementado por: `synthService.ts` (via `BackendFactory`/`SynthBackend`).
+ * - Consumido por: `stores.ts` (`SynthSettings`, `ChannelSettings`, `GlobalSettings`,
+ *   `CHANNEL_SETTING_KEYS`, `DEFAULT_*`).
+ */
 
 export interface SynthEngine {
   noteOn(channel: number, note: number, velocity: number): void;
