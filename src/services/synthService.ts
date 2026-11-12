@@ -1,3 +1,21 @@
+/**
+ * SynthService — orquestrador do sintetizador (motor de áudio).
+ *
+ * 🔗 Relacionamentos:
+ * - Injetado como `SynthPort` em `midiService.ts` → consumido por `midiCore.ts`
+ *   (que recebe notas, CC, PB, pressure etc. de `routeMessage`).
+ * - Consumido em `App.tsx` via `useSyncExternalStore(synthService.subscribe, ...)`
+ *   para saber se o synth está `ready` (`canPlay`).
+ * - Configurado por `synthSettingsStore` (em `stores.ts`) via
+ *   `applyGlobalSettings`/`applyChannelSettings` a partir do painel de Mixer/CC.
+ * - Backend real (SpessaSynth) carregado sob demanda via `./audio/spessaEngine`.
+ * - Testado por `synthService.test.ts`.
+ *
+ * ⚠️ PERFORMANCE: `getSnapshot` retorna a MESMA referência até que `ready`,
+ * `loading`, `fileName` ou `bankCount` mudem. Por isso o `App` NÃO re-renderiza
+ * a cada nota. Se essa invariante for quebrada no futuro (ex.: incluir polyphony
+ * ou voiceCount no snapshot), isolar como fizemos com `VuMeterLive`.
+ */
 import { clampInt } from '../lib/midiMath';
 import type { BackendFactory, ChannelSettings, GlobalSettings, SynthBackend, SynthSettings } from './synthTypes';
 
