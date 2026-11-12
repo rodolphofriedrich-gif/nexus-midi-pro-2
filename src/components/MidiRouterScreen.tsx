@@ -47,7 +47,7 @@ export function MidiRouterScreen({ destinations, connectedDestinations, isRefres
       <button
         type="button"
         onClick={() => updateRoute(routeId, field, 0)}
-        className={`w-full px-2 py-1.5 text-center font-mono text-xs hover:bg-[var(--bg-elevated)] ${current === 0 ? 'bg-[var(--bg-elevated)]/50 font-bold text-indigo-400' : 'text-[var(--text-main)]'}`}
+        className={`w-full px-2 py-1.5 text-center font-mono text-xs hover:bg-[var(--bg-elevated)] ${current === 0 ? 'bg-[var(--bg-elevated)]/50 font-bold text-[var(--nexus-primary)]' : 'text-[var(--text-main)]'}`}
       >
         {zeroLabel}
       </button>
@@ -56,7 +56,7 @@ export function MidiRouterScreen({ destinations, connectedDestinations, isRefres
           type="button"
           key={i + 1}
           onClick={() => updateRoute(routeId, field, i + 1)}
-          className={`w-full px-2 py-1.5 text-center font-mono text-xs hover:bg-[var(--bg-elevated)] ${current === i + 1 ? 'bg-[var(--bg-elevated)]/50 font-bold text-indigo-400' : 'text-[var(--text-main)]'}`}
+          className={`w-full px-2 py-1.5 text-center font-mono text-xs hover:bg-[var(--bg-elevated)] ${current === i + 1 ? 'bg-[var(--bg-elevated)]/50 font-bold text-[var(--nexus-primary)]' : 'text-[var(--text-main)]'}`}
         >
           {String(i + 1).padStart(2, '0')}
         </button>
@@ -98,7 +98,7 @@ export function MidiRouterScreen({ destinations, connectedDestinations, isRefres
                     type="button"
                     aria-label={tr('Excluir rota')}
                     onClick={() => midiManager.removeRoute(route.id)}
-                    className="p-1 text-[var(--text-muted)] transition hover:text-red-400"
+                    className="p-1 text-[var(--text-muted)] transition hover:text-[var(--nexus-danger)]"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -111,10 +111,10 @@ export function MidiRouterScreen({ destinations, connectedDestinations, isRefres
                   <button
                     type="button"
                     onClick={() => setOpenDropdown(openDropdown === `in-${route.id}` ? null : `in-${route.id}`)}
-                    className="flex w-full items-center justify-between rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] p-2 text-xs font-semibold text-emerald-300 transition hover:border-emerald-500/50"
+                    className="flex w-full items-center justify-between rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] p-2 text-xs font-semibold text-[var(--nexus-success)] transition hover:border-[var(--nexus-success)]/50"
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <Download size={14} className="shrink-0 text-emerald-500" />
+                      <Download size={14} className="shrink-0 text-[var(--nexus-success)]" />
                       <span className="truncate">{inputName(route)}</span>
                     </div>
                     <ChevronDown size={14} className={`transition-transform ${openDropdown === `in-${route.id}` ? 'rotate-180' : ''}`} />
@@ -126,7 +126,7 @@ export function MidiRouterScreen({ destinations, connectedDestinations, isRefres
                           type="button"
                           key={input.id}
                           onClick={() => updateRoute(route.id, 'sourceId', input.id === ALL_INPUTS ? null : input.id)}
-                          className={`w-full truncate px-3 py-2 text-left text-xs hover:bg-[var(--bg-elevated)] ${(route.sourceId ?? ALL_INPUTS) === input.id ? 'bg-[var(--bg-elevated)]/50 font-bold text-indigo-400' : 'text-[var(--text-main)]'}`}
+                          className={`w-full truncate px-3 py-2 text-left text-xs hover:bg-[var(--bg-elevated)] ${(route.sourceId ?? ALL_INPUTS) === input.id ? 'bg-[var(--bg-elevated)]/50 font-bold text-[var(--nexus-primary)]' : 'text-[var(--text-main)]'}`}
                         >
                           {input.name}
                         </button>
@@ -138,7 +138,7 @@ export function MidiRouterScreen({ destinations, connectedDestinations, isRefres
                 <div className="relative flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold uppercase text-[var(--text-muted)]">{tr('Saída (MIDI Out)')}</label>
                   {connectedDestinations.length === 0 ? (
-                    <div className="rounded-lg border border-amber-700/50 bg-amber-900/20 p-2 text-center text-xs text-amber-500">
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-center text-xs text-amber-600 dark:text-amber-500">
                       {tr('Conecte um dispositivo USB/BLE no topo.')}
                     </div>
                   ) : (
@@ -163,7 +163,7 @@ export function MidiRouterScreen({ destinations, connectedDestinations, isRefres
                           type="button"
                           key={dest.id}
                           onClick={() => updateRoute(route.id, 'destinationId', dest.id)}
-                          className={`w-full truncate px-3 py-2 text-left text-xs hover:bg-[var(--bg-elevated)] ${route.destinationId === dest.id ? 'bg-[var(--bg-elevated)]/50 font-bold text-indigo-400' : 'text-[var(--text-main)]'}`}
+                          className={`w-full truncate px-3 py-2 text-left text-xs hover:bg-[var(--bg-elevated)] ${route.destinationId === dest.id ? 'bg-[var(--bg-elevated)]/50 font-bold text-[var(--nexus-primary)]' : 'text-[var(--text-main)]'}`}
                         >
                           {dest.displayName}
                         </button>
@@ -207,7 +207,10 @@ export function MidiRouterScreen({ destinations, connectedDestinations, isRefres
                     min={-24}
                     max={24}
                     value={route.transpose === 0 ? '' : route.transpose}
-                    onChange={(e) => updateRoute(route.id, 'transpose', Math.max(-24, Math.min(24, Number(e.target.value) || 0)))}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      updateRoute(route.id, 'transpose', isNaN(val) ? 0 : Math.max(-24, Math.min(24, val)));
+                    }}
                     placeholder="0"
                     className="rounded border border-[var(--border-color)] bg-[var(--bg-panel)] px-2 py-1.5 text-center font-mono text-xs text-[var(--text-main)] outline-none transition focus:border-indigo-500"
                   />
