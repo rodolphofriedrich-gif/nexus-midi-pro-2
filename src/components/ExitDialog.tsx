@@ -1,3 +1,12 @@
+/**
+ * ExitDialog — confirmação de saída do app.
+ *
+ * 🔗 Relacionamentos:
+ * - Renderizado por: `App.tsx` quando `showExit === true`.
+ * - `onConfirm` → `useAppHandlers.handleConfirmExit` (chama `NativeMidi.fecharApp`).
+ * - Alvo do botão "voltar" do Android via `useAndroidBackButton` em `useAppEffects.ts`
+ *   (que define `showExit = true` no último nível).
+ */
 import { LogOut } from 'lucide-react';
 import { tr } from '../i18n';
 
