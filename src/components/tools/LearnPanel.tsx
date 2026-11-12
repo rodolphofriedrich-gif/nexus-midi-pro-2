@@ -26,7 +26,8 @@ export function LearnPanel() {
             <div key={target.id} className="flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] px-3 py-2">
               <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--text-main)]">{tr(target.label)}</span>
               {mapping && !isArmed && (
-                <span className="rounded bg-indigo-950/60 px-1.5 py-0.5 font-mono text-[10px] text-indigo-300">
+                /* ALTERAÇÃO AQUI: Cores adaptadas para o tema */
+                <span className="rounded bg-indigo-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--nexus-primary)]">
                   CC{mapping.cc}
                   {mapping.channel > 0 ? ` · CH${mapping.channel}` : ''}
                 </span>
@@ -39,7 +40,8 @@ export function LearnPanel() {
                 {isArmed ? tr('Mexa no controle...') : tr('Aprender')}
               </button>
               {mapping && (
-                <button type="button" aria-label={tr('Remover mapeamento')} onClick={() => midiLearn.remove(target.id)} className="rounded p-1 text-[var(--text-muted)] hover:bg-red-950/40 hover:text-red-400">
+                /* ALTERAÇÃO AQUI: Hover usando a cor de perigo do tema */
+                <button type="button" aria-label={tr('Remover mapeamento')} onClick={() => midiLearn.remove(target.id)} className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--nexus-danger)]/10 hover:text-[var(--nexus-danger)]">
                   <X size={14} />
                 </button>
               )}
@@ -48,7 +50,7 @@ export function LearnPanel() {
         })}
       </div>
       {mappings.length > 0 && (
-        <button type="button" onClick={() => midiLearn.clear()} className="self-start text-[10px] font-bold text-[var(--text-muted)] underline hover:text-red-400">
+        <button type="button" onClick={() => midiLearn.clear()} className="self-start text-[10px] font-bold text-[var(--text-muted)] underline hover:text-[var(--nexus-danger)]">
           {tr('Remover todos os mapeamentos')}
         </button>
       )}
