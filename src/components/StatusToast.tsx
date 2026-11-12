@@ -1,12 +1,23 @@
+/**
+ * StatusToast — toast global de mensagens (info/warn/error/success).
+ *
+ * 🔗 Relacionamentos:
+ * - Renderizado por: `App.tsx`, alimentado por `useToast` (`hooks/useToast.ts`).
+ * - Todos os `showMessage`/`notify` do app terminam aqui
+ *   (`useAppHandlers.ts`, `useMidiDevices.ts`, `handleRefreshRouter`, etc.).
+ *
+ * 🎨 Correção aplicada: as cores agora se adaptam ao tema (claro no claro,
+ * escuro no escuro) via `dark:` do Tailwind.
+ */
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import type { Toast } from '../hooks/useToast';
 import { tr } from '../i18n';
 
 const STYLES: Record<Toast['type'], string> = {
-  success: 'bg-emerald-900/90 text-emerald-100 border border-emerald-700',
-  warn: 'bg-amber-900/90 text-amber-100 border border-amber-700',
-  error: 'bg-red-900/90 text-red-100 border border-red-700',
-  info: 'bg-blue-900/90 text-blue-100 border border-blue-700',
+  success: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 dark:bg-emerald-900/90 dark:text-emerald-100 dark:border-emerald-700',
+  warn:    'bg-amber-500/10 text-amber-600 border border-amber-500/30 dark:bg-amber-900/90 dark:text-amber-100 dark:border-amber-700',
+  error:   'bg-red-500/10 text-red-600 border border-red-500/30 dark:bg-red-900/90 dark:text-red-100 dark:border-red-700',
+  info:    'bg-blue-500/10 text-blue-600 border border-blue-500/30 dark:bg-blue-900/90 dark:text-blue-100 dark:border-blue-700',
 };
 
 export function StatusToast({ toast, onClose }: { toast: Toast | null; onClose: () => void }) {
