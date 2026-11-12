@@ -1,3 +1,14 @@
+/**
+ * MidiPadGrid — grade de pads MIDI (4×4).
+ *
+ * 🔗 Relacionamentos:
+ * - Renderizado por: `App.tsx` (aba Play > Pads).
+ * - Consome: `padsStore` de `services/stores.ts` (bancos 0-3 × 16 pads).
+ * - Consome: `useStore` de `hooks/useStore.ts`.
+ * - Consome: `resolveChordNotes`, `CHORD_BADGE` de `constants/chords.ts`.
+ * - Dispara: `onNoteOn`/`onNoteOff` → `useAppHandlers.handleNoteOn/handleNoteOff`
+ *   → `performanceEngine` → `midiManager.routeMessage` → `synthService`/rotas.
+ */
 import React, { useState, useRef, useEffect } from 'react';
 import { Settings2, X, Save } from 'lucide-react';
 import { tr } from '../i18n';
