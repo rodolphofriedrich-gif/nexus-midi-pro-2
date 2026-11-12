@@ -5,7 +5,6 @@ import { ChannelSelectPopup } from './app/components/ChannelSelectPopup';
 import {
   useAndroidBackButton,
   useLanguageAndTheme,
-  useVuMeter,
   useWakeLock,
 } from './app/useAppEffects';
 import { useAppHandlers } from './app/useAppHandlers';
@@ -18,7 +17,7 @@ import { MidiStatusBar } from './components/MidiStatusBar';
 import { SettingsScreen } from './components/SettingsScreen';
 import { StatusToast } from './components/StatusToast';
 import { StudioScreen } from './components/StudioScreen';
-import { VuMeter } from './components/VuMeter';
+import { VuMeterLive } from './components/VuMeterLive';
 import { useMidiDevices } from './hooks/useMidiDevices';
 import { useStore } from './hooks/useStore';
 import { useToast, type ToastType } from './hooks/useToast';
@@ -69,7 +68,10 @@ export default function App() {
   });
   useLanguageAndTheme(prefs.language, prefs.theme);
   useWakeLock(prefs.wakeLock);
-  const vuLevel = useVuMeter();
+
+  // O nível do VU meter NÃO mora mais neste componente: se ficasse aqui,
+  // cada nota MIDI re-renderizava o App inteiro. Agora está isolado em
+  // <VuMeterLive />, que só re-renderiza a si mesmo.
 
   const {
     handleNoteOn,
@@ -103,7 +105,12 @@ export default function App() {
 
   const toggleMenu = (menu: 'usb' | 'ble') => {
     setOpenMenu((current) => (current === menu ? null : menu));
-    void devices.refresh();
+    // refresh() faz I/O e, na implementação atual, nunca rejeita (o
+    // MidiConnectionManager engole o erro e devolve cache). O catch abaixo é
+    // defesa contra futuras mudanças no manager.
+    devices.refresh().catch((error) => {
+      console.warn('[App] refresh ao abrir menu falhou:', error);
+    });
   };
 
   return (
@@ -191,7 +198,7 @@ export default function App() {
           {activeTab === 'play' && playTab === 'keyboard' && (
             <div className="nexus-keyboard-page flex min-h-0 w-full flex-1 flex-col gap-1 overflow-hidden p-1 pb-[env(safe-area-inset-bottom)] sm:p-1.5">
               <div className="flex min-h-0 flex-1 flex-row gap-1">
-                <div className="py-1"><VuMeter level={vuLevel} /></div>
+                <div className="py-1"><VuMeterLive /></div>
                 <div className="nexus-keyboard-container flex min-h-0 flex-1 flex-col">
                   <MidiKeyboard
                     ref={keyboardRef}
@@ -208,6 +215,8 @@ export default function App() {
                     onToggleSustain={handleToggleSustain}
                     selectedVelocity={prefs.velocity}
                     onSelectVelocity={(velocity) => prefsStore.set({ velocity })}
+                    // Estes métodos retornam Promise que resolve sempre (o envio
+                    // real é fire-and-forget dentro do midiCore). O void é seguro.
                     onPitchBend={(val) => void midiManager.sendPitchBend(prefs.channel, val)}
                     onModWheel={(val) => void midiManager.sendControlChange(prefs.channel, 1, val)}
                   />
@@ -220,7 +229,7 @@ export default function App() {
           {activeTab === 'play' && playTab === 'pads' && (
             <div className="nexus-pads-page flex min-h-0 w-full flex-1 flex-col gap-1 overflow-hidden p-1 pb-[env(safe-area-inset-bottom)] sm:p-1.5">
               <div className="flex min-h-0 flex-1 flex-row gap-1">
-                <div className="py-1"><VuMeter level={vuLevel} /></div>
+                <div className="py-1"><VuMeterLive /></div>
                 <div className="flex min-h-0 flex-1 flex-col">
                   <MidiPadGrid
                     bank={padBank}
