@@ -1,3 +1,11 @@
+/**
+ * Testes do SynthService.
+ *
+ * 🔗 Relacionamentos:
+ * - Testa `synthService.ts` usando mock de `SynthBackend` (definido em `synthTypes.ts`).
+ * - Cobre canais (base 0 no motor), transposição por canal, polifonia, mute/solo, RPN,
+ *   voice stealing, retoque da mesma nota, RPN com abertura/fechamento etc.
+ */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SynthService } from './synthService';
 import { DEFAULT_CHANNEL_SETTINGS, DEFAULT_SYNTH_SETTINGS, type SynthBackend } from './synthTypes';
@@ -143,7 +151,7 @@ describe('SynthService', () => {
     synth.allNotesOff();
     calls.length = 0;
     synth.noteOn(62, 100);
-    expect(calls).toEqual(['on:0:62:100']); // não "rouba" uma voz que já foi limpa
+    expect(calls).toEqual(['on:0:62:100']);
   });
 
   it('CC 123 limpa só as notas do canal', () => {
@@ -152,7 +160,7 @@ describe('SynthService', () => {
     synth.noteOn(62, 100, 2);
     synth.controlChange(123, 0, 1);
     calls.length = 0;
-    synth.noteOn(64, 100, 1); // cabe: só havia a nota do canal 2
+    synth.noteOn(64, 100, 1);
     expect(calls).toEqual(['on:0:64:100']);
   });
 
@@ -184,7 +192,7 @@ describe('SynthService', () => {
   it('applySettings com "previous" só reenvia o que mudou', () => {
     synth.applySettings({ ...DEFAULT_SYNTH_SETTINGS, reverb: 80 }, DEFAULT_SYNTH_SETTINGS);
     const ccs = calls.filter((c) => c.startsWith('cc:'));
-    expect(ccs).toHaveLength(16); // só o reverb, nos 16 canais
+    expect(ccs).toHaveLength(16);
     expect(ccs.every((c) => c.includes(':91:'))).toBe(true);
   });
 
