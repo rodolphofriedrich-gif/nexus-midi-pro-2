@@ -77,7 +77,6 @@ export default function App() {
   const [openMenu, setOpenMenu] = useState<'usb' | 'ble' | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showExit, setShowExit] = useState(false);
-  const [activeNotes, setActiveNotes] = useState(0);
   const [isPadEditMode, setIsPadEditMode] = useState(false);
   const [isPadChannelOpen, setIsPadChannelOpen] = useState(false);
 
@@ -240,7 +239,6 @@ export default function App() {
                     onNoteOn={(note) => handleNoteOn(note, prefs.channel, undefined, 'keyboard')}
                     onNoteOff={(note) => handleNoteOff(note, prefs.channel, 'keyboard')}
                     onDisabledPress={handleDisabledPress}
-                    onActiveNotesChange={setActiveNotes}
                     isActive={true}
                     isSustainActive={prefs.sustain}
                     onToggleSustain={handleToggleSustain}
@@ -253,7 +251,7 @@ export default function App() {
                   />
                 </div>
               </div>
-              <MidiStatusBar connectedCount={devices.connected.length} canPlay={canPlay} activeNotes={activeNotes} />
+              <MidiStatusBar connectedCount={devices.connected.length} canPlay={canPlay} />
             </div>
           )}
 

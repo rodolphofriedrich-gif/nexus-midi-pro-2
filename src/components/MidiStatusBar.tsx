@@ -1,16 +1,17 @@
 import { useSyncExternalStore } from 'react';
 import { tr } from '../i18n';
 import { midiManager } from '../services/midiService';
+import { getActiveNotesCount, subscribeActiveNotesCount } from '../services/activeNotesStore';
 
 interface Props {
   connectedCount: number;
   canPlay: boolean;
-  activeNotes: number;
 }
 
 /** Barra inferior do teclado. Assina o log MIDI aqui para que só ela re-renderize a cada mensagem. */
-export function MidiStatusBar({ connectedCount, canPlay, activeNotes }: Props) {
+export function MidiStatusBar({ connectedCount, canPlay }: Props) {
   const log = useSyncExternalStore(midiManager.subscribeLog, midiManager.getLog, midiManager.getLog);
+  const activeNotes = useSyncExternalStore(subscribeActiveNotesCount, getActiveNotesCount, getActiveNotesCount);
   const lastTx = log.find((entry) => entry.direction === 'TX');
 
   return (
