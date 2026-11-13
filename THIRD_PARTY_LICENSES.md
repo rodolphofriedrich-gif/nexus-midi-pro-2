@@ -104,7 +104,7 @@ Referências: [AndroidX](https://developer.android.com/jetpack/androidx), [Apach
 
 ## Avisos de distribuição
 
-O repositório inclui `NOTICE` com os créditos e avisos de marca reproduzidos do projeto SpessaSynth. Os textos MIT, Apache-2.0, ISC e 0BSD usados pelo conjunto npm de execução são incluídos em `public/licenses/` e copiados para o build Web/Android. A página local `public/THIRD_PARTY_NOTICES.html` fica acessível em **Configurações → Sobre o App → Ver licenças e créditos**. Ela é um resumo de créditos e links; os avisos originais dos pacotes continuam sendo a referência para cada componente.
+O repositório inclui `NOTICE` com os créditos e avisos de marca reproduzidos do projeto SpessaSynth e `ASSET_CREDITS.md`, que registra os recursos visuais cuja autoria/licença ainda precisa ser confirmada pelo mantenedor. Os textos MIT, Apache-2.0, ISC e 0BSD usados pelo conjunto npm de execução são incluídos em `public/licenses/` e copiados para o build Web/Android. A página local `public/THIRD_PARTY_NOTICES.html` fica acessível em **Configurações → Sobre o App → Ver licenças e créditos**. Ela é um resumo de créditos e links; os avisos originais dos pacotes continuam sendo a referência para cada componente.
 
 A página local não substitui uma conferência do conjunto Gradle efetivamente empacotado no APK. Antes de distribuir uma versão, gere e revise o relatório de dependências Android resolvidas e confira se todos os avisos/copyrights exigidos estão presentes no pacote final.
 
