@@ -29,6 +29,29 @@ As versões abaixo foram conferidas no `package-lock.json` do projeto. A lista d
 
 As versões são as resolvidas pelo lockfile na revisão desta documentação; não representam necessariamente as versões mais recentes disponíveis.
 
+## Pacotes npm de execução identificados no lockfile
+
+O lockfile marca 14 pacotes como dependências de produção (não inclui as dependências de desenvolvimento):
+
+| Pacote | Versão | Licença |
+| --- | ---: | --- |
+| `@capacitor/app` | 8.1.2 | MIT |
+| `@capacitor/core` | 8.6.2 | MIT |
+| `@capacitor/filesystem` | 8.1.5 | MIT |
+| `@capacitor/share` | 8.0.3 | MIT |
+| `@capacitor/synapse` | 1.0.4 | ISC |
+| `fflate` | 0.8.3 | MIT |
+| `lucide-react` | 0.546.0 | ISC |
+| `react` | 19.3.1 | MIT |
+| `react-dom` | 19.3.1 | MIT |
+| `scheduler` | 0.28.0 | MIT |
+| `spessasynth_core` | 4.4.10 | Apache-2.0 |
+| `spessasynth_lib` | 4.4.8 | Apache-2.0 |
+| `stb-vorbis` | 0.0.7 | Apache-2.0 |
+| `tslib` | 2.9.1 | 0BSD |
+
+A tabela representa as dependências de produção sinalizadas no lockfile npm. O empacotamento Web/Android e a resolução Gradle podem incorporar dependências transitivas adicionais; para cada versão distribuída, a lista deve ser conferida com o artefato final e os arquivos de licença dos pacotes correspondentes.
+
 ## Licenças identificadas nas dependências transitivas
 
 O lockfile contém 592 entradas de pacotes em `node_modules`. Os metadados de licença dessas entradas estão distribuídos da seguinte forma:
@@ -115,6 +138,29 @@ The versions below were checked against the project's `package-lock.json`. The t
 | TypeScript | 7.0.2 | Apache-2.0 |
 
 These are the versions resolved by the lockfile when this document was reviewed; they are not necessarily the latest available versions.
+
+## npm runtime packages identified in the lockfile
+
+The lockfile marks 14 packages as production dependencies (excluding development dependencies):
+
+| Package | Version | License |
+| --- | ---: | --- |
+| `@capacitor/app` | 8.1.2 | MIT |
+| `@capacitor/core` | 8.6.2 | MIT |
+| `@capacitor/filesystem` | 8.1.5 | MIT |
+| `@capacitor/share` | 8.0.3 | MIT |
+| `@capacitor/synapse` | 1.0.4 | ISC |
+| `fflate` | 0.8.3 | MIT |
+| `lucide-react` | 0.546.0 | ISC |
+| `react` | 19.3.1 | MIT |
+| `react-dom` | 19.3.1 | MIT |
+| `scheduler` | 0.28.0 | MIT |
+| `spessasynth_core` | 4.4.10 | Apache-2.0 |
+| `spessasynth_lib` | 4.4.8 | Apache-2.0 |
+| `stb-vorbis` | 0.0.7 | Apache-2.0 |
+| `tslib` | 2.9.1 | 0BSD |
+
+This table represents production dependencies marked in the npm lockfile. The Web/Android packaging process and Gradle resolution may include additional transitive dependencies; for each distributed version, verify the final artifact and the corresponding packages' license files.
 
 ## Licenses identified in transitive dependencies
 
