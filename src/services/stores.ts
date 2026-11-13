@@ -2,14 +2,17 @@
  * stores.ts — stores globais (persistidos + memória) do app.
  *
  * 🔗 Relacionamentos:
- * - `prefsStore`      → consumido por `App.tsx` e `useAppHandlers.ts`.
+ * - `prefsStore`      → consumido por `App.tsx`, `useAppHandlers.ts`, `SettingsScreen.tsx`.
  * - `padsStore`       → consumido por `MidiPadGrid.tsx`.
  * - `toolsStore`      → consumido por `PerformancePanel.tsx`, `ArpPanel.tsx`, `MetronomePanel.tsx`.
  * - `runtimeStore`    → (memória) `ArpPanel.tsx`, `MetronomePanel.tsx`.
  * - `channelsStore` / `channelSettingsStore` → painéis do Mixer/CC.
  * - `synthSettingsStore` → alimenta `synthService.applyGlobalSettings/applyChannelSettings`.
  * - `learnStore`      → consumido por `LearnPanel.tsx`.
- * - Os tipos `SynthSettings`/`ChannelSettings`/`GlobalSettings` vêm de `synthTypes.ts`.
+ *
+ * 📝 Notas:
+ * - `startOctave` e `padBank` passaram a ser persistidos (antes eram `useState` no App.tsx
+ *   e voltavam pro padrão a cada reload). Faixas: octave 1–6, bank 0–3.
  */
 import { clampInt } from '../lib/midiMath';
 import { createMemoryStorage, createStore } from '../lib/storeCore';
@@ -35,6 +38,10 @@ export interface Prefs {
   theme: 'dark' | 'light' | 'system';
   sustain: boolean;
   wakeLock: boolean;
+  /** Oitava inicial do teclado virtual (1–6). Persistido para o usuário não perder posição. */
+  startOctave: number;
+  /** Banco de pads ativo (0–3). Persistido pelo mesmo motivo. */
+  padBank: number;
 }
 
 export const DEFAULT_PREFS: Prefs = {
@@ -47,6 +54,8 @@ export const DEFAULT_PREFS: Prefs = {
   theme: 'dark',
   sustain: false,
   wakeLock: true,
+  startOctave: 3,
+  padBank: 0,
 };
 
 export const prefsStore = createStore<Prefs>('nexusmidi.prefs', DEFAULT_PREFS, {
@@ -70,6 +79,8 @@ export const prefsStore = createStore<Prefs>('nexusmidi.prefs', DEFAULT_PREFS, {
     // então na reabertura sempre começa desligado. O CC 64 real é enviado quando o usuário alterna.
     sustain: false,
     wakeLock: typeof p.wakeLock === 'boolean' ? p.wakeLock : true,
+    startOctave: clampInt(p.startOctave, 1, 6),
+    padBank: clampInt(p.padBank, 0, 3),
   }),
 });
 
