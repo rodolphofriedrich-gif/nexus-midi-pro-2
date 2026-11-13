@@ -72,10 +72,11 @@ describe('SynthService', () => {
     expect(synth.getSnapshot()).toMatchObject({ ready: true, bankCount: 2, fileName: 'a.sf2 +1' });
   });
 
-  it('remover o último SoundFont deixa o sintetizador sem som (ready=false)', async () => {
+  it('remover o último SoundFont descarta o backend e deixa o sintetizador sem som', async () => {
     await synth.removeSoundBank('a');
     expect(synth.getSnapshot()).toMatchObject({ ready: false, bankCount: 0, fileName: null });
-    expect(calls).toContain('remove:a');
+    expect(calls).toContain('backend-dispose');
+    expect(calls).not.toContain('remove:a');
   });
 
   it('a ordem de prioridade muda o resumo e é repassada ao motor', async () => {
