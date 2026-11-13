@@ -1,3 +1,18 @@
+/**
+ * midiCore — orquestrador do serviço MIDI (MidiService).
+ *
+ * 🔗 Relacionamentos:
+ * - Fachada pública: reexportado por `midiService.ts` como `midiManager`.
+ * - Compõe (Fases 1–4): `MidiMonitor`, `MidiSendQueue`, `MidiRoutingEngine`
+ *   e `MidiConnectionManager`.
+ * - Consome: `NativeMidiPort` (nativeMidi.ts) e `SynthPort` (synthService.ts).
+ * - Consumido por: `App.tsx`, `useAppHandlers.ts`, `useMidiDevices.ts`,
+ *   `MidiRouterScreen.tsx`, `MidiMonitorScreen.tsx`, gravador (`addTap`) e
+ *   MIDI Learn (`setLearn`).
+ * - `refreshDevices(onError?)` / `getAvailableDestinations(onError?)` propagam
+ *   falha de I/O via callback opcional — usado só por
+ *   `useAppHandlers.handleRefreshRouter` (botão "Atualizar" do roteador).
+ */
 import { getNoteName, toHex, clampInt, channelStatus } from '../lib/midiMath';
 import { parseMidiBytes } from '../lib/midiParser';
 import type { StorageLike } from '../lib/storeCore';
@@ -154,12 +169,12 @@ export class MidiService {
 
   // ---- Descoberta (delegação para o ConnectionManager) -----------------
 
-  public async getAvailableDestinations(): Promise<MidiDestination[]> {
-    return this.connections.getAvailableDestinations();
+  public async getAvailableDestinations(onError?: (error: unknown) => void): Promise<MidiDestination[]> {
+    return this.connections.getAvailableDestinations(onError);
   }
 
-  public async refreshDevices(): Promise<MidiDestination[]> {
-    return this.connections.refreshDevices();
+  public async refreshDevices(onError?: (error: unknown) => void): Promise<MidiDestination[]> {
+    return this.connections.refreshDevices(onError);
   }
 
   public async scanBleDevice(): Promise<NativeBleDevice[]> {
