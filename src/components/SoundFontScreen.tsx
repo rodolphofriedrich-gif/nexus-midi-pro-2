@@ -8,7 +8,7 @@ import { tr } from '../i18n';
 import { soundFontLibrary } from '../services/soundFontLibrary';
 import { channelSettingsOf, channelSettingsStore, channelsStore, prefsStore, synthSettingsStore } from '../services/stores';
 import type { ChannelSettings, SynthSettings } from '../services/synthTypes';
-import { DEFAULT_CHANNEL_SETTINGS, isChannelSettingKey } from '../services/synthTypes';
+import { DEFAULT_CHANNEL_SETTINGS, DEFAULT_SYNTH_SETTINGS, isChannelSettingKey } from '../services/synthTypes';
 import { synthService } from '../services/synthService';
 import type { SoundFontPreset } from '../types/soundfont';
 import { ActiveSoundFontCard } from './soundfont/ActiveSoundFontCard';
@@ -207,8 +207,27 @@ export function SoundFontScreen({ onStatus }: Props) {
 
   const handleResetChannel = () => {
     const ch = configChannel;
-    channelSettingsStore.set((prev) => ({ channels: { ...prev.channels, [ch]: { ...DEFAULT_CHANNEL_SETTINGS } } }));
-    onStatus(tr('Configurações do canal {ch} restauradas.', { ch }), 'info');
+
+    // Settings do canal: substitui pelo default (mantém os outros canais intactos).
+    channelSettingsStore.set((prev) => ({
+      channels: { ...prev.channels, [ch]: { ...DEFAULT_CHANNEL_SETTINGS } },
+    }));
+
+    // Settings globais: reset só dos campos globais, sem tocar no resto do
+    // `SynthSettings` (que pode conter defaults de outros canais).
+    synthSettingsStore.set((prev) => ({
+      ...prev,
+      delayTime: DEFAULT_SYNTH_SETTINGS.delayTime,
+      delayFeedback: DEFAULT_SYNTH_SETTINGS.delayFeedback,
+      delayMix: DEFAULT_SYNTH_SETTINGS.delayMix,
+      eqLow: DEFAULT_SYNTH_SETTINGS.eqLow,
+      eqMid: DEFAULT_SYNTH_SETTINGS.eqMid,
+      eqHigh: DEFAULT_SYNTH_SETTINGS.eqHigh,
+      compThreshold: DEFAULT_SYNTH_SETTINGS.compThreshold,
+      maxPolyphony: DEFAULT_SYNTH_SETTINGS.maxPolyphony,
+    }));
+
+    onStatus(tr('Configurações restauradas.'), 'info');
   };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
