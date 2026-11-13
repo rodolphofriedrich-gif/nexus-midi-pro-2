@@ -363,6 +363,6 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes. Bug reports, 
 
 ## License
 
-The original code in this project is distributed under the **MIT License**. The official license text is in [LICENSE](LICENSE); an [informational Brazilian Portuguese translation](LICENSE-PT-BR.md) is also available. Third-party libraries retain their own licenses and notices; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+The original code in this project is distributed under the **MIT License**. The official license text is in [LICENSE](LICENSE); an [informational Brazilian Portuguese translation](LICENSE-PT-BR.md) is also available. Third-party libraries retain their own licenses and notices; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md), [NOTICE](NOTICE), and the [visual asset provenance register](ASSET_CREDITS.md). The app includes a local **Settings → About → View licenses and acknowledgments** page; build scripts collect the original license/NOTICE files from installed npm runtime packages.
 
 The MIT License does not grant rights to third-party trademarks, names, icons, SoundFont files, or other content that may be used with the application.
