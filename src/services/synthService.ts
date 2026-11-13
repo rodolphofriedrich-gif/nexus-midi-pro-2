@@ -7,7 +7,8 @@
  * - Consumido em `App.tsx` via `useSyncExternalStore(synthService.subscribe, ...)`
  *   para saber se o synth está `ready` (`canPlay`).
  * - Configurado por `synthSettingsStore` (em `stores.ts`) via
- *   `applyGlobalSettings`/`applyChannelSettings` a partir do painel de Mixer/CC.
+ *   `applyGlobalSettings`/`applyChannelSettings` a partir do painel do synth
+ *   e do Mixer/CC.
  * - Backend real (SpessaSynth) carregado sob demanda via `./audio/spessaEngine`.
  * - Testado por `synthService.test.ts`.
  *
@@ -15,6 +16,14 @@
  * `loading`, `fileName` ou `bankCount` mudem. Por isso o `App` NÃO re-renderiza
  * a cada nota. Se essa invariante for quebrada no futuro (ex.: incluir polyphony
  * ou voiceCount no snapshot), isolar como fizemos com `VuMeterLive`.
+ *
+ * 📝 Notas (unificação mixerStore → channelSettingsStore):
+ * - `setVibratoDepth` foi renomeado para `setModWheel` (é o mesmo CC1).
+ * - `setExpression` foi adicionado (CC11).
+ * - `applyChannelSettings` agora cobre `modWheel`, `expression` e `pan`.
+ * - `program`, `pitchBend` e `pressure` ficam fora do `applyChannelSettings`
+ *   (são enviados explicitamente pelo `MidiControlsScreen` quando o usuário
+ *   interage — via `sendProgramChange`, `sendPitchBend`, `sendChannelPressure`).
  */
 import { clampInt } from '../lib/midiMath';
 import type { BackendFactory, ChannelSettings, GlobalSettings, SynthBackend, SynthSettings } from './synthTypes';
@@ -280,12 +289,15 @@ export class SynthService {
   setPan(percent: number, channel = 1): void { this.controlChange(10, toCc(percent), channel); }
   setReverb(percent: number, channel = 1): void { this.controlChange(91, toCc(percent), channel); }
   setChorus(percent: number, channel = 1): void { this.controlChange(93, toCc(percent), channel); }
-  // Attack/Release/Cutoff/Resonance/Vibrato já usam a escala de CC (0–127) nos sliders.
+  // Attack/Release/Cutoff/Resonance/ModWheel/Expression já usam a escala de CC (0–127).
   setAttack(cc: number, channel = 1): void { this.controlChange(73, cc, channel); }
   setRelease(cc: number, channel = 1): void { this.controlChange(72, cc, channel); }
   setFilterCutoff(cc: number, channel = 1): void { this.controlChange(74, cc, channel); }
   setFilterResonance(cc: number, channel = 1): void { this.controlChange(71, cc, channel); }
-  setVibratoDepth(cc: number, channel = 1): void { this.controlChange(1, cc, channel); }
+  /** Modulação (CC1). Era `setVibratoDepth` antes da unificação mixer/synth. */
+  setModWheel(cc: number, channel = 1): void { this.controlChange(1, cc, channel); }
+  /** Expression (CC11). */
+  setExpression(cc: number, channel = 1): void { this.controlChange(11, cc, channel); }
 
   /** Afinação fina em centésimos (-100…+100) via RPN 1. */
   setFineTuning(cents: number, channel = 1): void {
@@ -336,11 +348,16 @@ export class SynthService {
 
   /**
    * Aplica as configurações de UM canal, sem tocar nos outros. Com `previous`, só reenvia o que mudou.
-   * O volume não entra aqui: ele depende de mute/solo e vai por `applyMix`/`applyChannelMix`.
+   *
+   * Regras:
+   *   - `volume` NÃO entra aqui (depende de mute/solo — vai por `applyMix`/`applyChannelMix`).
+   *   - `program`, `pitchBend` e `pressure` NÃO são CCs: o mixer os envia explicitamente via
+   *     `sendProgramChange`/`sendPitchBend`/`sendChannelPressure` quando o usuário interage.
    */
   applyChannelSettings(channel: number, next: ChannelSettings, previous?: ChannelSettings): void {
     if (!this.snapshot.ready) return;
-    const changed = (...keys: Array<keyof ChannelSettings>): boolean => !previous || keys.some((k) => previous[k] !== next[k]);
+    const changed = (...keys: Array<keyof ChannelSettings>): boolean =>
+      !previous || keys.some((k) => previous[k] !== next[k]);
 
     if (changed('transpose')) this.setTranspose(next.transpose, channel);
     if (changed('reverb')) this.setReverb(next.reverb, channel);
@@ -349,9 +366,13 @@ export class SynthService {
     if (changed('release')) this.setRelease(next.release, channel);
     if (changed('cutoff')) this.setFilterCutoff(next.cutoff, channel);
     if (changed('resonance')) this.setFilterResonance(next.resonance, channel);
-    if (changed('vibrato')) this.setVibratoDepth(next.vibrato, channel);
+    if (changed('modWheel')) this.setModWheel(next.modWheel, channel);
+    if (changed('expression')) this.setExpression(next.expression, channel);
+    // `pan` usa CC10 cru (0-127), não a escala 0-100% do `setPan`.
+    if (changed('pan')) this.controlChange(10, clampInt(next.pan, 0, 127), channel);
     if (changed('fineTune')) this.setFineTuning(next.fineTune, channel);
     if (changed('pitchBendRange')) this.setPitchBendRange(next.pitchBendRange, channel);
+    // program / pitchBend / pressure: enviados pelo mixer, não aqui.
   }
 
   /** Aplica o mesmo conjunto a todos os canais (uso simples; o app usa as versões por canal). */
