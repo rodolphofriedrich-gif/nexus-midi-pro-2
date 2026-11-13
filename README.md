@@ -184,7 +184,7 @@ Leia [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviar alterações. São bem-v
 
 ## Licença
 
-O código original deste projeto é distribuído sob a licença **MIT**. O texto oficial está em [LICENSE](LICENSE); há uma [tradução informativa para Português (Brasil)](LICENSE-PT-BR.md). As bibliotecas de terceiros mantêm suas próprias licenças e avisos; consulte [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+O código original deste projeto é distribuído sob a licença **MIT**. O texto oficial está em [LICENSE](LICENSE); há uma [tradução informativa para Português (Brasil)](LICENSE-PT-BR.md). As bibliotecas de terceiros mantêm suas próprias licenças e avisos; consulte [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) e [NOTICE](NOTICE). No aplicativo, a seção **Configurações → Sobre o App → Ver licenças e créditos** abre os avisos locais incluídos no build.
 
 A licença MIT não concede direitos sobre marcas, nomes, ícones, arquivos SoundFont ou outros conteúdos de terceiros que possam ser utilizados com o aplicativo.
 
