@@ -1,3 +1,16 @@
+/**
+ * useAppHandlers — handlers de alto nível do App.
+ *
+ * 🔗 Relacionamentos:
+ * - Consumido por: `App.tsx` (via `useAppHandlers(...)`, passando `prefs`,
+ *   `showMessage`, `setShowExit`, `setIsRouterRefreshing`, `devices.refresh`
+ *   e `firstConnectedDeviceId`).
+ * - Consome: `midiManager` (midiService.ts), `performanceEngine`,
+ *   `prefsStore` (services/stores.ts) e `NativeMidi` (nativeMidi.ts).
+ * - `handleRefreshRouter` agora usa o `onError` de `refreshDevices` para
+ *   mostrar toast quando o refresh do roteador falha (em vez de catch que
+ *   nunca disparava, porque o manager devolvia cache silencioso).
+ */
 import { useCallback } from 'react';
 import { tr } from '../i18n';
 import { midiManager, VIRTUAL_ID } from '../services/midiService';
@@ -13,7 +26,8 @@ interface UseAppHandlersArgs {
   showMessage: Notify;
   setShowExit: (value: boolean) => void;
   setIsRouterRefreshing: (value: boolean) => void;
-  refreshDevices: () => Promise<void>;
+  /** Recebe `onError` opcional para reportar falha de refresh na UI. */
+  refreshDevices: (onError?: (error: unknown) => void) => Promise<void>;
   firstConnectedDeviceId: string | undefined;
 }
 
@@ -87,13 +101,13 @@ export function useAppHandlers({
   const handleRefreshRouter = useCallback(async () => {
     setIsRouterRefreshing(true);
     try {
-      await refreshDevices();
-    } catch (error) {
-      // Defensivo: na implementação atual, refreshDevices nunca rejeita
-      // (MidiConnectionManager engole o erro e devolve cache). Mantido para
-      // não quebrar caso o manager passe a propagar erros no futuro.
-      console.warn('[useAppHandlers] refresh do roteador falhou:', error);
-      showMessage(tr('Falha ao atualizar dispositivos MIDI'), 'error', 2500);
+      // `refreshDevices` nunca rejeita — ele chama `onError` quando o plugin
+      // falha em `getDevices()`. Assim, o toast aparece só quando há falha
+      // real, sem try/catch que nunca dispararia.
+      await refreshDevices((error) => {
+        console.warn('[useAppHandlers] refresh do roteador falhou:', error);
+        showMessage(tr('Falha ao atualizar dispositivos MIDI'), 'error', 2500);
+      });
     } finally {
       setIsRouterRefreshing(false);
     }
