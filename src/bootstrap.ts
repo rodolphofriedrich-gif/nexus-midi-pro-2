@@ -3,6 +3,7 @@ import './services/performanceService';
 import './services/metronomeService';
 import { flushAllStores } from './lib/storeCore';
 import { channelSettingsOf, channelSettingsStore, channelsStore, synthSettingsStore } from './services/stores';
+import { performanceEngine } from './services/performanceService'; // Import necessário para o handler
 import { soundFontLibrary } from './services/soundFontLibrary';
 import { synthService } from './services/synthService';
 
@@ -63,11 +64,20 @@ export function startAppServices(): void {
   soundFontLibrary.setOnLoaded(applyAll);
   void soundFontLibrary.restore();
 
-  // Ao ir para segundo plano (ou fechar), grava o que ainda estava aguardando o "debounce".
+  // Ao ir para segundo plano (ou fechar), grava o que ainda estava aguardando o "debounce"
+  // e força a parada de notas/arpejador.
+  // No WebView do Android, `blur` frequentemente NÃO dispara; `visibilitychange` é a
+  // última linha de defesa contra o "drone" de notas em background.
+  const handleHidden = (): void => {
+    performanceEngine.releaseAll();
+    synthService.allNotesOff();
+    flushAllStores();
+  };
+
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushAllStores();
+    if (document.visibilityState === 'hidden') handleHidden();
   });
-  window.addEventListener('pagehide', flushAllStores);
+  window.addEventListener('pagehide', handleHidden);
 
   // Navegadores só liberam áudio após um gesto do usuário.
   const unlock = (): void => void synthService.resume();
