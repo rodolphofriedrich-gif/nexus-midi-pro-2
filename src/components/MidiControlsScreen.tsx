@@ -1,10 +1,33 @@
-import { useEffect, useMemo, useState } from 'react';
+/**
+ * MidiControlsScreen — painel Mixer/CC, com estado POR CANAL.
+ *
+ * 🔗 Relacionamentos:
+ * - Renderizado por: `StudioScreen.tsx` (aba "Mixer / CC").
+ * - Consome: `mixerStore` (services/stores.ts) — faders por canal.
+ * - Consome: `prefsStore` — `sustain` global (o pedal é enviado a 16 canais).
+ * - Consome: `midiManager` — `sendControlChange`, `sendProgramChange`,
+ *   `sendPitchBend`, `sendChannelPressure`, `sendPanic`.
+ * - Faders: `StudioFader` (memo, hardware-look).
+ * - Presets: salvos em `localStorage` (`nexusmidi_controls_presets_v1`),
+ *   snapshots globais aplicados ao canal atual. A persistência dos faders
+ *   é delegada ao `mixerStore` (debounced internamente).
+ * - Bug-fix histórico: antes o estado era global em `localStorage` e não
+ *   acompanhava a troca de canal; agora cada canal tem seu próprio estado.
+ */
+import { useCallback, useEffect, useState } from 'react';
 import { Play, Save, Trash2, ShieldAlert, RotateCcw } from 'lucide-react';
 import { tr } from '../i18n';
 import { uid } from '../lib/id';
 import { midiManager } from '../services/midiService';
 import { useStore } from '../hooks/useStore';
-import { prefsStore } from '../services/stores';
+import {
+  prefsStore,
+  mixerStore,
+  mixerForChannel,
+  updateMixerForChannel,
+  resetMixerForChannel,
+  type MixerState,
+} from '../services/stores';
 import { StudioFader } from './StudioFader';
 
 type MidiPreset = {
@@ -20,35 +43,7 @@ type MidiPreset = {
   pressure: number;
 };
 
-interface MixerState {
-  modWheel: number;
-  volume: number;
-  expression: number;
-  pan: number;
-  program: number;
-  pitchBend: number;
-  pressure: number;
-  reverb: number;
-  chorus: number;
-  cutoff: number;
-  resonance: number;
-}
-
 const PRESETS_KEY = 'nexusmidi_controls_presets_v1';
-const STATE_KEY = 'nexusmidi_mixer_state';
-const DEFAULT_CONTROLS: MixerState = {
-  modWheel: 0,
-  volume: 100,
-  expression: 127,
-  pan: 64,
-  program: 1,
-  pitchBend: 8192,
-  pressure: 0,
-  reverb: 40,
-  chorus: 15,
-  cutoff: 127,
-  resonance: 64,
-};
 
 interface Props {
   channel: number;
@@ -67,7 +62,8 @@ function loadPresets(): MidiPreset[] {
   }
 }
 
-const errorText = (error: unknown): string => (error instanceof Error && error.message ? error.message : tr('erro desconhecido'));
+const errorText = (error: unknown): string =>
+  error instanceof Error && error.message ? error.message : tr('erro desconhecido');
 
 function ChannelBadge({ channel }: { channel: number }) {
   return (
@@ -79,45 +75,33 @@ function ChannelBadge({ channel }: { channel: number }) {
 
 export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
   const prefs = useStore(prefsStore);
+  const mixerAll = useStore(mixerStore);
 
-  const [state, setState] = useState<MixerState>(() => {
-    try {
-      const saved = localStorage.getItem(STATE_KEY);
-      return saved ? { ...DEFAULT_CONTROLS, ...JSON.parse(saved) } : DEFAULT_CONTROLS;
-    } catch {
-      return DEFAULT_CONTROLS;
-    }
-  });
-
+  // Estado derivado do store: muda automaticamente quando o canal troca.
+  const state = mixerForChannel(mixerAll, channel);
   const { modWheel, volume, expression, pan, program, pitchBend, reverb, chorus, cutoff, resonance } = state;
 
-  const updateState = <K extends keyof MixerState>(key: K, value: MixerState[K]) => 
-    setState((s) => ({ ...s, [key]: value }));
+  const updateState = <K extends keyof MixerState>(key: K, value: MixerState[K]) =>
+    updateMixerForChannel(channel, { [key]: value } as Partial<MixerState>);
 
   const [presetName, setPresetName] = useState(() => tr('Meu preset'));
   const [presets, setPresets] = useState<MidiPreset[]>(loadPresets);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch { /* */ }
-  }, [state]);
-
-  useEffect(() => {
     try { localStorage.setItem(PRESETS_KEY, JSON.stringify(presets)); } catch { /* */ }
   }, [presets]);
 
-  const resetControls = () => {
-    setState(DEFAULT_CONTROLS);
+  const resetControls = useCallback(() => {
+    resetMixerForChannel(channel);
     onStatus(tr('Controles redefinidos localmente.'), 'info');
-  };
+  }, [channel, onStatus]);
 
   useEffect(() => {
     const handleReset = () => resetControls();
     window.addEventListener('resetMixer', handleReset);
     return () => window.removeEventListener('resetMixer', handleReset);
-  }, []);
-
-  const controls = useMemo(() => state, [state]);
+  }, [resetControls]);
 
   const sendAction = async (action: () => Promise<unknown>, successMessage: string) => {
     if (!isConnected) {
@@ -142,18 +126,18 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
     }
     setBusy(true);
     try {
-      setState((s) => ({
-        ...s,
+      // Atualiza só o canal atual, sem tocar nos outros.
+      updateMixerForChannel(channel, {
         modWheel: preset.modWheel,
         volume: preset.volume,
         expression: preset.expression,
         pan: preset.pan,
         program: preset.program,
         pitchBend: preset.pitchBend,
-        pressure: preset.pressure
-      }));
+        pressure: preset.pressure,
+      });
       prefsStore.set({ sustain: preset.sustain });
-      
+
       await midiManager.sendControlChange(channel, 1, preset.modWheel);
       await midiManager.sendControlChange(channel, 7, preset.volume);
       await midiManager.sendControlChange(channel, 11, preset.expression);
@@ -162,7 +146,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
       await midiManager.sendProgramChange(channel, preset.program - 1);
       await midiManager.sendPitchBend(channel, preset.pitchBend);
       await midiManager.sendChannelPressure(channel, preset.pressure);
-      
+
       onStatus(tr('Preset “{name}” aplicado no canal {channel}.', { name: preset.name, channel }), 'success');
     } catch (error) {
       onStatus(tr('Não foi possível aplicar o preset: {message}', { message: errorText(error) }), 'error');
@@ -174,7 +158,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
   const savePreset = () => {
     const name = presetName.trim();
     if (!name) { onStatus(tr('Digite um nome para o preset.'), 'warn'); return; }
-    const preset: MidiPreset = { id: uid('preset-'), name, sustain: prefs.sustain, ...controls };
+    const preset: MidiPreset = { id: uid('preset-'), name, sustain: prefs.sustain, ...state };
     setPresets((current) => [preset, ...current]);
     onStatus(tr('Preset “{name}” salvo neste dispositivo.', { name }), 'success');
   };
@@ -369,7 +353,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2">
               {presets.map((preset) => (
-                <div key={preset.id} className="flex min-w-0 items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] p-2 hover:border-slate-500 transition group">
+                <div key={preset.id} className="flex min-w-0 items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] p-2 hover:border-[var(--nexus-primary)]/50 transition group">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs font-bold text-[var(--text-main)]">{preset.name}</div>
                   </div>
