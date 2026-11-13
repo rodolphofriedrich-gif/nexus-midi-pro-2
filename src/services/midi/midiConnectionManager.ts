@@ -1,3 +1,19 @@
+/**
+ * MidiConnectionManager — descoberta e conexão USB/BLE.
+ *
+ * 🔗 Relacionamentos:
+ * - Instanciado por: `midiCore.ts` (MidiService), que passa `sendQueue` e callbacks
+ *   (`ensureDefaultRoute`, `onRefresh`, `onDisconnect`).
+ * - Consome: `NativeMidiPlugin` (nativeMidi.ts) e `MidiSendQueue` (midiSendQueue.ts).
+ * - Notifica via callbacks:
+ *     `onRefresh`    → `useMidiDevices.refresh` (App.tsx via MidiService.setCallbacks)
+ *     `onDisconnect` → `useMidiDevices.handleDisconnect`
+ * - `refreshDevices(onError?)` e `getAvailableDestinations(onError?)` aceitam um
+ *   callback opcional para a UI reportar falha de I/O. Hoje só
+ *   `useAppHandlers.handleRefreshRouter` passa esse callback (botão "Atualizar"
+ *   do roteador). Chamadas internas (auto-refresh, scan, toggle) continuam
+ *   silenciosas — o erro fica no console.
+ */
 import { dedupeDestinations } from '../../lib/destinations';
 import type { MidiDestination } from '../../types/midi';
 import type { NativeBleDevice, NativeBleServerStatus, NativeMidiPlugin } from '../nativeMidi';
@@ -85,11 +101,11 @@ export class MidiConnectionManager {
 
   // ---- Descoberta ------------------------------------------------------
 
-  public async getAvailableDestinations(): Promise<MidiDestination[]> {
-    return this.refreshDevices();
+  public async getAvailableDestinations(onError?: (error: unknown) => void): Promise<MidiDestination[]> {
+    return this.refreshDevices(onError);
   }
 
-  public async refreshDevices(): Promise<MidiDestination[]> {
+  public async refreshDevices(onError?: (error: unknown) => void): Promise<MidiDestination[]> {
     try {
       const result = await this.native.getDevices();
       const nativeDevices: MidiDestination[] = (result.devices || []).map((device) => ({
@@ -124,6 +140,9 @@ export class MidiConnectionManager {
       return this.destinations;
     } catch (error) {
       console.error('Erro ao atualizar dispositivos MIDI:', error);
+      // Silencioso por padrão (chamadas internas continuam só logando), mas
+      // se o caller passou `onError`, ele pode reportar na UI (ex.: toast).
+      onError?.(error);
       return this.destinations;
     }
   }
