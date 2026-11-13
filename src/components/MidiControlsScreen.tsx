@@ -24,9 +24,8 @@ import {
   channelSettingsStore,
   channelSettingsOf,
   updateChannelSettings,
-  type ChannelSettings,
 } from '../services/stores';
-import { DEFAULT_CHANNEL_SETTINGS } from '../services/synthTypes';
+import { DEFAULT_CHANNEL_SETTINGS, type ChannelSettings } from '../services/synthTypes';
 import { StudioFader } from './StudioFader';
 
 type MidiPreset = {
@@ -84,7 +83,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
 
   // Estado derivado: muda automaticamente quando o canal troca.
   const state = channelSettingsOf(channelSettingsState, channel);
-  const { modWheel, volume, expression, pan, program, pitchBend, reverb, chorus, cutoff, resonance } = state;
+  const { modWheel, volume, expression, pan, program, pitchBend, pressure, reverb, chorus, cutoff, resonance } = state;
 
   const patchChannel = useCallback(
     (patch: Partial<ChannelSettings>) => updateChannelSettings(channel, patch),
@@ -102,7 +101,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
   const resetControls = useCallback(() => {
     const patch: Partial<ChannelSettings> = {};
     for (const key of MIXER_KEYS) {
-      // Tipagem: cada `key` é atribuível a si mesmo em Partial<ChannelSettings>.
+      // Cast para Record: cada `key` é atribuível a si mesmo em Partial<ChannelSettings>.
       (patch as Record<keyof ChannelSettings, number>)[key] = DEFAULT_CHANNEL_SETTINGS[key];
     }
     updateChannelSettings(channel, patch);
