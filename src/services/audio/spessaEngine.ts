@@ -74,6 +74,14 @@ class SpessaEngine implements SynthEngine {
     this.synth.polyPressure?.(channel, note, pressure);
   }
   allSoundOff(): void {
+    // Tríade de emergência em todos os 16 canais ANTES do stopAll.
+    // Cobre vozes presas no worklet (bug do Android WebView ao receber
+    // rajadas de noteOn/noteOff durante arrasto rápido no teclado).
+    for (let ch = 0; ch < 16; ch++) {
+      this.synth.controllerChange(ch, 64, 0);   // Sustain off
+      this.synth.controllerChange(ch, 120, 0);  // All Sound Off
+      this.synth.controllerChange(ch, 123, 0);  // All Notes Off
+    }
     this.synth.stopAll?.(true);
   }
 
@@ -106,10 +114,26 @@ class SpessaEngine implements SynthEngine {
 export async function createWebAudioBackend(): Promise<SynthBackend> {
   const Ctor: typeof AudioContext =
     window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  // Sem sampleRate fixo: usa a taxa nativa do aparelho, evitando reamostragem (mais latência/CPU).
+  // Sem sampleRate fixo: usa a taxa nativa do aparelho, evitando reamostragem.
   const ctx = new Ctor({ latencyHint: 'interactive' });
-  // Não aguardamos: sem gesto do usuário o resume() só resolve depois do primeiro toque.
-  if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
+
+  // ⚠️ Crítico: WorkletSynthesizer NÃO carrega bancos com o contexto suspenso.
+  // No WebView do Android, `ctx.state` começa `suspended` e `resume()` só
+  // resolve após um gesto do usuário. Antes de criar o worklet, aguardamos
+  // esse gesto — senão `soundBankManager.addSoundBank()` (chamado pelo
+  // `soundFontLibrary.restore()` no boot) falha silenciosamente e o SF2
+  // aparece na biblioteca mas sem presets e sem tocar.
+  if (ctx.state === 'suspended') {
+    await new Promise<void>((resolve) => {
+      const onGesture = () => {
+        window.removeEventListener('pointerdown', onGesture);
+        window.removeEventListener('keydown', onGesture);
+        void ctx.resume().then(() => resolve()).catch(() => resolve());
+      };
+      window.addEventListener('pointerdown', onGesture, { once: true });
+      window.addEventListener('keydown', onGesture, { once: true });
+    });
+  }
 
   await ctx.audioWorklet.addModule(workletUrl);
 
