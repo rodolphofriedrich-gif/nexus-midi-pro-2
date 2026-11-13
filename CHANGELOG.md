@@ -30,6 +30,20 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - Carregar uma cena não reaplicava os instrumentos dos canais ao sintetizador.
 - Ao importar um SoundFont, as atribuições de canal eram apagadas.
 
+### Corrigido / Fixed
+
+- **[pt-BR]** Restauração da lista de presets SoundFont após reabrir o aplicativo; análise dos dados antes da transferência do buffer ao motor de áudio.
+- **[en]** Restored the SoundFont preset list after reopening the app; preset data is parsed before the audio engine receives the transferred buffer.
+- **[pt-BR]** Nova tentativa de restauração após falhas transitórias e migração do armazenamento legado mais resiliente.
+- **[en]** Added restore retries after transient failures and made legacy storage migration more resilient.
+- **[pt-BR]** Remoção do último SoundFont passa a descartar o backend de áudio, evitando divergência entre a interface e o motor.
+- **[en]** Removing the final SoundFont now disposes of the audio backend, preventing UI and engine state from diverging.
+
+### Documentação / Documentation
+
+- **[pt-BR]** README, contribuição, segurança, código de conduta e licenças de terceiros documentados em Português (Brasil) e Inglês.
+- **[en]** README, contribution, security, code of conduct, and third-party license documentation provided in Brazilian Portuguese and English.
+
 ## [1.0.0]
 
 ### Corrigido

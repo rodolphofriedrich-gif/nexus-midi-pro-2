@@ -150,11 +150,26 @@ export class SynthService {
   async removeSoundBank(id: string): Promise<void> {
     if (!this.banks.has(id)) return;
     this.allNotesOff();
-    this.banks.delete(id);
+
+    // SpessaSynth não permite excluir o último banco. Descartar o backend inteiro
+    // é a forma segura de chegar ao estado realmente vazio; a próxima importação
+    // criará um AudioContext/Worklet novo.
+    if (this.banks.size === 1) {
+      this.banks.clear();
+      this.backend?.dispose();
+      this.backend = null;
+      this.backendPromise = null;
+      this.publishBanks({ loading: false });
+      return;
+    }
+
     try {
       await this.backend?.engine.removeSoundBank(id);
+      this.banks.delete(id);
     } catch (error) {
+      // Não altere o estado lógico se o motor não confirmou a remoção.
       console.error('Erro ao remover SoundFont:', error);
+      throw error;
     }
     if (this.backend) this.reapplyPrograms(this.backend);
     this.publishBanks();

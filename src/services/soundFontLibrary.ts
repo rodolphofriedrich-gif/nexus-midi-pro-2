@@ -70,7 +70,19 @@ export class SoundFontLibrary {
 
   /** Lista a biblioteca e carrega os SoundFonts ligados. Seguro chamar várias vezes. */
   restore(): Promise<boolean> {
-    if (!this.restored) this.restored = this.doRestore();
+    if (!this.restored) {
+      this.restored = this.doRestore().then(
+        (ok) => {
+          // Uma falha transitória não pode bloquear novas tentativas nesta sessão.
+          if (!ok) this.restored = null;
+          return ok;
+        },
+        (error: unknown) => {
+          this.restored = null;
+          throw error;
+        },
+      );
+    }
     return this.restored;
   }
 
@@ -168,13 +180,12 @@ export class SoundFontLibrary {
 
       const presets = { ...this.snapshot.presets };
       for (const id of ids) {
-        if (this.loaded.has(id)) {
-          finalIds.push(id);
-          continue;
-        }
         let data = preloaded?.get(id);
         let name = this.snapshot.items.find((i) => i.id === id)?.name;
-        if (!data) {
+
+        // Mesmo que o banco já esteja no motor, a lista de presets precisa existir
+        // nesta sessão. O caminho de restauração lê novamente os bytes do IndexedDB.
+        if (!data && (!this.loaded.has(id) || !presets[id])) {
           const record = await this.storage.get(id);
           if (!record) {
             allOk = false;
@@ -184,13 +195,26 @@ export class SoundFontLibrary {
           data = record.data;
           name = record.meta.name;
         }
-        if (!(await this.synth.addSoundBank(id, data, name ?? id))) {
+
+        // SpessaSynth transfere/detacha o ArrayBuffer recebido. Analise primeiro
+        // e entregue uma cópia ao motor para preservar os bytes do armazenamento.
+        if (data && !presets[id]) presets[id] = parseSf2Presets(data);
+
+        if (this.loaded.has(id)) {
+          finalIds.push(id);
+          continue;
+        }
+        if (!data) {
+          allOk = false;
+          this.update({ error: 'Dados do SoundFont indisponíveis.' });
+          continue;
+        }
+        if (!(await this.synth.addSoundBank(id, data.slice(0), name ?? id))) {
           allOk = false;
           this.update({ error: 'O motor de áudio não conseguiu carregar este arquivo.' });
           continue;
         }
         this.loaded.add(id);
-        presets[id] ??= parseSf2Presets(data);
         finalIds.push(id);
       }
 

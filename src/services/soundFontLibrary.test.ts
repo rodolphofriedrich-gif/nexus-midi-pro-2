@@ -40,8 +40,10 @@ describe('SoundFontLibrary (vários SoundFonts ao mesmo tempo)', () => {
     new SoundFontLibrary(
       storage,
       {
-        addSoundBank: async (id, _b, name) => {
+        addSoundBank: async (id, buffer, name) => {
           if (!loadOk) return false;
+          // Simula a transferência do ArrayBuffer feita pelo SpessaSynth/AudioWorklet.
+          structuredClone(buffer, { transfer: [buffer] });
           loaded.push(`${id}=${name}`);
           return true;
         },
@@ -144,7 +146,28 @@ describe('SoundFontLibrary (vários SoundFonts ao mesmo tempo)', () => {
     expect(await reopened.restore()).toBe(true);
     expect(loaded).toHaveLength(1);
     expect(loaded[0].endsWith('=piano.sf2')).toBe(true);
-    expect(reopened.getSnapshot().presets[reopened.getSnapshot().activeIds[0]]).toHaveLength(1);
+    expect(reopened.getSnapshot().presets[reopened.getSnapshot().activeIds[0]]).toEqual([
+      { name: 'Grand', bank: 0, program: 0 },
+    ]);
+  });
+
+  it('restore() pode ser tentado novamente depois de uma falha transitória', async () => {
+    await storage.add('piano.sf2', piano);
+    const originalList = storage.list;
+    let attempts = 0;
+    storage.list = async () => {
+      attempts++;
+      if (attempts === 1) throw new Error('IndexedDB temporariamente indisponível');
+      return originalList();
+    };
+
+    const reopened = build();
+    expect(await reopened.restore()).toBe(false);
+    expect(await reopened.restore()).toBe(true);
+    expect(attempts).toBe(2);
+    expect(reopened.getSnapshot().presets[reopened.getSnapshot().activeIds[0]]).toEqual([
+      { name: 'Grand', bank: 0, program: 0 },
+    ]);
   });
 
   it('restore() respeita "tudo desligado" (não religa sozinho)', async () => {

@@ -47,6 +47,7 @@ const done = (tx: IDBTransaction): Promise<void> =>
 class IndexedDbSoundFontStorage implements SoundFontStorage {
   private dbPromise: Promise<IDBDatabase> | null = null;
   private migrated = false;
+  private migrationPromise: Promise<void> | null = null;
 
   private open(): Promise<IDBDatabase> {
     if (!this.dbPromise) {
@@ -69,23 +70,37 @@ class IndexedDbSoundFontStorage implements SoundFontStorage {
   }
 
   /** Importa o SoundFont salvo pela versão antiga do app (uma única vez). */
-  private async migrateLegacy(db: IDBDatabase): Promise<void> {
-    if (this.migrated) return;
-    this.migrated = true;
-    try {
-      const tx = db.transaction(LEGACY_STORE, 'readonly');
-      const legacy = (await wrap(tx.objectStore(LEGACY_STORE).get(LEGACY_KEY))) as
-        | { name?: string; data?: ArrayBuffer }
-        | undefined;
-      if (!legacy?.data || !legacy.name) return;
-      const metas = await wrap(db.transaction(META_STORE, 'readonly').objectStore(META_STORE).getAll());
-      if (metas.length === 0) await this.add(legacy.name, legacy.data);
-      const clear = db.transaction(LEGACY_STORE, 'readwrite');
-      clear.objectStore(LEGACY_STORE).delete(LEGACY_KEY);
-      await done(clear);
-    } catch (error) {
-      console.warn('Migração do SoundFont antigo falhou:', error);
+  private migrateLegacy(db: IDBDatabase): Promise<void> {
+    if (this.migrated) return Promise.resolve();
+    if (!this.migrationPromise) {
+      this.migrationPromise = this.performLegacyMigration(db).then(
+        () => {
+          this.migrated = true;
+        },
+        (error: unknown) => {
+          // Permite nova tentativa se IndexedDB falhar por uma condição transitória.
+          this.migrationPromise = null;
+          console.warn('Migração do SoundFont antigo falhou:', error);
+          throw error;
+        },
+      );
     }
+    return this.migrationPromise;
+  }
+
+  private async performLegacyMigration(db: IDBDatabase): Promise<void> {
+    const tx = db.transaction(LEGACY_STORE, 'readonly');
+    const legacy = (await wrap(tx.objectStore(LEGACY_STORE).get(LEGACY_KEY))) as
+      | { name?: string; data?: ArrayBuffer }
+      | undefined;
+    if (!legacy?.data || !legacy.name) return;
+
+    const metas = await wrap(db.transaction(META_STORE, 'readonly').objectStore(META_STORE).getAll());
+    if (metas.length === 0) await this.add(legacy.name, legacy.data.slice(0));
+
+    const clear = db.transaction(LEGACY_STORE, 'readwrite');
+    clear.objectStore(LEGACY_STORE).delete(LEGACY_KEY);
+    await done(clear);
   }
 
   async list(): Promise<SoundFontMeta[]> {

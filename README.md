@@ -1,164 +1,368 @@
-# 🎹 NexusMIDI Pro
+# NexusMIDI Pro
 
-**Hub MIDI e sintetizador SoundFont para Android e Web.**
+**Hub MIDI e sintetizador SoundFont para Android e Web.**  
+**MIDI hub and SoundFont synthesizer for Android and the Web.**
 
-O NexusMIDI Pro transforma o celular ou tablet em controlador MIDI, roteador (patchbay), sintetizador SoundFont, gravador e ferramenta de performance — tudo em uma interface com o tema "Midnight Studio" (Dark/Light). Funciona offline.
+[![Build](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/actions/workflows/build.yml/badge.svg)](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[![Build](https://github.com/rodolphofriedrich-gif/Teclado-MIDI-BLUETOOTH-/actions/workflows/build.yml/badge.svg)](https://github.com/rodolphofriedrich-gif/Teclado-MIDI-BLUETOOTH-/actions/workflows/build.yml)
-
----
-
-## ✨ Funcionalidades
-
-**Tocar**
-- **🎹 Teclado virtual** multi-touch com *glissando*, zoom e rolagem livre.
-- **🥁 Pads de bateria**: 16 pads General MIDI em 4 bancos (64 pads no total).
-- **🎶 Chord Pads**: cada pad pode tocar uma nota única, um acorde pré-definido (maior, menor, 7ª, etc.) ou intervalos customizados.
-- **📈 VU meters** que reagem à velocity real (tocada ou recebida).
-- **☀️ Wake Lock**: mantém a tela acesa durante a performance.
-
-**Sintetizador SoundFont**
-- Importe arquivos `.sf2`; o app mantém uma **biblioteca** com vários SoundFonts e restaura o último usado ao abrir.
-- **Multitimbral**: um som diferente em cada um dos 16 canais, com mute/solo.
-- Efeitos: delay, EQ de 3 bandas, compressor, reverb/chorus do SoundFont, envelope, filtro, vibrato, afinação e polifonia ajustável (com *voice stealing*).
-
-**Conectar e rotear**
-- **🔗 USB (OTG) e Bluetooth LE MIDI**, com detecção de plug/unplug e reconexão automática de BLE.
-- **📡 "Ficar visível"**: o aparelho aparece como instrumento BLE MIDI para DAWs e outros dispositivos.
-- **🔀 Roteador matriz**: várias entradas → várias saídas, com filtro de canal, transposição e ativar/desativar por rota. As rotas são salvas.
-- **🔍 Monitor MIDI** de mensagens enviadas (TX) e recebidas (RX), com histórico mantido entre as abas.
-
-**Ferramentas de performance**
-- **Curva de velocity** (linear, suave, forte, fixa).
-- **Escalas** (maior, menor, pentatônicas, blues, modos…) com correção automática das notas.
-- **Acorde de um toque** (maior, menor, 7ª, sus…) com inversões.
-- **Arpejador** (sobe, desce, sobe/desce, aleatório, como tocado; 1–4 oitavas; gate; latch).
-- **Metrônomo**, **tap tempo** e **MIDI Clock** de saída (Start/Stop + 24 ppqn).
-- **Gravador MIDI** com reprodução e **exportação `.mid`** (compartilhar no Android).
-- **MIDI Learn**: associe knobs/faders físicos aos parâmetros do app.
-- **Presets de controles CC**, **MIDI Panic** e roda de Pitch Bend.
-
-**Geral**: interface em **Português (Brasil)** e **English**, temas Dark/Light/System.
+- [Português (Brasil)](#português-brasil)
+- [English](#english)
 
 ---
 
-## 🛠️ Tecnologias
+# Português (Brasil)
+
+## Sobre o projeto
+
+O **NexusMIDI Pro** transforma celulares e tablets Android em uma estação musical com teclado e pads virtuais, sintetizador SoundFont, conexões MIDI e ferramentas de performance. Também oferece uma versão Web com os recursos compatíveis com o navegador.
+
+O projeto é desenvolvido com React, TypeScript, Capacitor e SpessaSynth. A interface oferece Português (Brasil) e Inglês, além de temas claro, escuro e sistema.
+
+## Funcionalidades
+
+### Teclado, pads e performance
+- Teclado virtual multitoque, com glissando, zoom e rolagem.
+- 16 pads General MIDI distribuídos em quatro bancos (64 posições).
+- Chord Pads para notas individuais, acordes e intervalos personalizados.
+- Curva de velocity, escalas, acordes e arpejador.
+- Metrônomo, Tap Tempo e MIDI Clock.
+- Wake Lock para manter a tela ativa durante a execução.
+
+### Sintetizador SoundFont
+- Importação de arquivos SoundFont `.sf2` para uma biblioteca local.
+- Leitura dos nomes, bancos e programas disponíveis nos arquivos importados.
+- Suporte multitimbral de 16 canais MIDI, com controles por canal.
+- Efeitos e controles de áudio, incluindo EQ, compressor, delay, reverb, chorus, envelope, filtro, vibrato, afinação e polifonia.
+
+### Conectividade e ferramentas MIDI
+- MIDI por USB (OTG) e Bluetooth LE MIDI no Android.
+- Modo de dispositivo BLE MIDI visível para equipamentos e aplicativos compatíveis.
+- Roteador MIDI com múltiplas entradas e saídas, filtros e transposição.
+- Monitor de mensagens MIDI enviadas (TX) e recebidas (RX).
+- Gravador MIDI com reprodução e exportação de arquivos `.mid`.
+- MIDI Learn, presets de controles CC, MIDI Panic e Pitch Bend.
+
+> **Compatibilidade:** recursos MIDI nativos USB e Bluetooth LE dependem do Android, das permissões do sistema e do hardware conectado. No navegador, a disponibilidade depende do navegador e das APIs suportadas.
+
+## Tecnologias
 
 | Camada | Tecnologia |
 | --- | --- |
-| Interface | React 19, TypeScript, Vite, Tailwind CSS 4 |
-| Áudio | [SpessaSynth](https://github.com/spessasus/SpessaSynth) (Web Audio + AudioWorklet) |
-| Nativo | Capacitor 8 + plugin Java próprio (`NativeMidi`: Android MIDI API, BLE central e periférico) |
-| Qualidade | Vitest, Oxlint, Prettier, GitHub Actions |
+| Interface | React, TypeScript, Vite e Tailwind CSS |
+| Áudio | [SpessaSynth](https://github.com/spessasus/SpessaSynth) e Web Audio |
+| Aplicativo Android | Capacitor 8 e plugin nativo Java |
+| Testes e qualidade | Vitest, Oxlint, Prettier e GitHub Actions |
 
----
+## Requisitos
 
-## 🚀 Começando
+- Node.js **20.19 ou superior** para desenvolvimento, conforme `package.json`. O CI utiliza Node.js 22.
+- npm compatível com a versão do Node.js.
+- Para compilar e executar a versão Android: JDK 21 e Android SDK. O Android Studio é recomendado.
 
-### Pré-requisitos
+## Instalação e desenvolvimento
 
-- [Node.js](https://nodejs.org/) **22.0 ou superior** (exigido pelo Capacitor CLI)
-- Para o app Android: [Android Studio](https://developer.android.com/studio) (ou apenas JDK 21 + Android SDK)
-
-### Rodar na web (desenvolvimento)
+Clone o repositório e instale as dependências:
 
 ```bash
-git clone https://github.com/rodolphofriedrich-gif/Teclado-MIDI-BLUETOOTH-.git
-cd Teclado-MIDI-BLUETOOTH-
+git clone https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2.git
+cd nexus-midi-pro-2
 npm ci
-npm run dev          # http://localhost:3000
 ```
 
-USB/BLE nativos só existem no app Android. No navegador você tem teclado, sintetizador, gravador e ferramentas.
-
-### Gerar o app Android
+Inicie o servidor de desenvolvimento:
 
 ```bash
-npm ci
-npm run cap:sync     # build do bundle + npx cap sync android
-npx cap open android # abre no Android Studio e rode no aparelho
+npm run dev
 ```
 
-Ou, direto pela linha de comando (gera `android/app/build/outputs/apk/debug/app-debug.apk`):
+O Vite disponibiliza o endereço local indicado no terminal (por padrão, porta 3000).
+
+### Compilar para Web
 
 ```bash
-npm run android:debug
+npm run build
 ```
 
-### Scripts úteis
+### Preparar e compilar para Android
 
-| Comando | O que faz |
+```bash
+npm run cap:sync
+cd android
+./gradlew assembleDebug
+```
+
+No Windows PowerShell, use o wrapper correspondente:
+
+```powershell
+npm run cap:sync
+cd android
+.\gradlew.bat assembleDebug
+```
+
+O APK de depuração é gerado em:
+
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+Também é possível executar `npm run android:debug` na raiz do projeto.
+
+## Comandos disponíveis
+
+| Comando | Descrição |
 | --- | --- |
-| `npm run dev` | Servidor de desenvolvimento |
-| `npm run build` | Build web |
-| `npm run build:android` | Build do bundle embutido no APK (sem Service Worker) |
-| `npm run typecheck` | Verificação de tipos (`tsc --noEmit`) |
-| `npm run lint` | Lint (Oxlint) |
-| `npm test` | Testes (Vitest) |
-| `npm run check` | typecheck + lint + testes |
-| `npm run format` | Formata o código (Prettier) |
+| `npm run dev` | Inicia o servidor de desenvolvimento |
+| `npm run build` | Compila a versão Web |
+| `npm run build:android` | Compila os arquivos Web para o aplicativo Android |
+| `npm run cap:sync` | Compila a versão Android e sincroniza o Capacitor |
+| `npm run android:debug` | Gera o APK Android de depuração |
+| `npm run typecheck` | Verifica os tipos TypeScript |
+| `npm run lint` | Executa o Oxlint |
+| `npm test` | Executa os testes automatizados |
+| `npm run check` | Executa typecheck, lint e testes |
+| `npm run format` | Formata os arquivos de código suportados |
 
----
+## Integração contínua e releases
 
-## 🚢 Publicar uma versão (CI/CD)
+O workflow em `.github/workflows/build.yml` executa verificação de tipos, lint, testes e build Web em Pull Requests e nos pushes configurados. O job Android não é executado em Pull Requests; ele compila o APK de depuração nos pushes para as branches configuradas.
 
-O workflow `.github/workflows/build.yml` roda typecheck, lint, testes e build em todo PR/push e gera o APK debug como artefato.
+Para gerar um APK de teste desta branch enquanto o Pull Request está em revisão:
 
-Para publicar um Release assinado no GitHub:
+1. Abra [GitHub Actions](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/actions/workflows/build.yml).
+2. Selecione o workflow **CI & Build APK - NexusMIDI Pro**.
+3. Clique em **Run workflow** e escolha a branch `fix/sf2-restore-and-storage`.
+4. Após a conclusão, abra a execução e baixe o artefato `NexusMIDI-Pro-debug-apk`.
 
-1. Crie um keystore (uma única vez) e guarde-o em lugar seguro:
-   ```bash
-   keytool -genkeypair -v -keystore nexusmidi.jks -alias nexusmidi -keyalg RSA -keysize 2048 -validity 10000
-   base64 -w0 nexusmidi.jks   # copie a saída
-   ```
+Para publicar um Release Android assinado, o mantenedor precisa configurar no GitHub Actions os seguintes *Secrets*:
 
-2. Em **Settings → Secrets and variables → Actions**, crie: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
 
-3. Crie e envie uma tag:
-   ```bash
-   git tag v1.1.0 && git push origin v1.1.0
-   ```
+O keystore e suas senhas devem ser mantidos em local seguro e nunca enviados ao repositório. Após configurar a assinatura, uma tag no formato `vX.Y.Z` aciona o workflow de Release, que pode publicar APK e AAB assinados. Sem a configuração de assinatura, o workflow pode publicar apenas o APK de depuração; esse APK não deve ser tratado como versão de produção assinada.
 
-   O CI compila `assembleRelease` + `bundleRelease` e anexa o APK e o AAB ao Release. Sem os segredos, o Release leva apenas o APK de debug.
+Acompanhe os builds em [GitHub Actions](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/actions).
 
----
+## Estrutura do projeto
 
-## 🗂️ Estrutura
-
-```
+```text
 src/
-├── components/        Telas e componentes (teclado, pads, roteador, sintetizador, ferramentas…)
-├── constants/         Tabelas de acordes, GM, cores de canais
-├── hooks/             useMidiDevices, useStore, useToast
-├── i18n/              tr() + dicionário en (pt-BR é o texto-fonte)
-├── lib/               Lógica pura e testada (arpejador, escalas, .mid, gravador, MIDI Learn…)
-├── services/          midiCore/midiService, synthService, bibliotecas, stores, áudio
-└── bootstrap.ts       Serviços que vivem durante todo o app
-android/               Projeto Android (plugin NativeMidi + BleMidiServer em Java)
+├── components/     Telas e componentes da interface
+├── constants/      Constantes e tabelas MIDI
+├── hooks/          Hooks React
+├── i18n/           Idiomas e traduções
+├── lib/            Lógica independente da interface
+├── services/       Serviços MIDI, áudio, sintetizador e armazenamento
+└── bootstrap.ts    Inicialização dos serviços
+android/            Projeto nativo Android e plugin MIDI
+.github/            Workflows e modelos de contribuição
 ```
 
-**Decisões de arquitetura:**
+## Testes
 
-- Lógica pura em `lib/` (sem React, sem Web Audio, sem Capacitor), com injeção de dependências — por isso é testável sem hardware.
-- Stores reativos (`createStore` + `useSyncExternalStore`) com persistência segura em `localStorage`.
-- O SpessaSynth é carregado sob demanda (somente ao abrir o primeiro SoundFont), reduzindo o tempo de abertura.
-
----
-
-## 🧪 Testes
+Execute:
 
 ```bash
 npm test
 ```
 
-Cobrem matemática MIDI, curvas de velocity, escalas/acordes, arpejador, arquivo `.mid` (ida e volta), gravador/player, MIDI Learn, parser de bytes, roteamento, conexões USB/BLE, falhas de envio, hot-plug, biblioteca de SoundFonts e i18n (todo texto tem tradução).
+Os testes automatizados cobrem módulos de lógica MIDI, ferramentas musicais, gravação e reprodução, roteamento, serviços, armazenamento, biblioteca SoundFont e internacionalização. A cobertura depende dos testes existentes no repositório; a execução em CI não substitui testes em aparelhos e equipamentos reais.
+
+## SoundFonts e arquivos de áudio
+
+Os arquivos `.sf2` não são fornecidos por este repositório. Importe somente arquivos que você tenha autorização para usar. O usuário é responsável por verificar os direitos autorais e os termos de distribuição dos SoundFonts utilizados.
+
+## Como contribuir
+
+Leia [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviar alterações. São bem-vindos relatos de bugs, propostas de melhoria, documentação e Pull Requests.
+
+- [Relatar um bug](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/issues/new?template=bug_report.md)
+- [Sugerir uma funcionalidade](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/issues/new?template=feature_request.md)
+- [Consultar o histórico de alterações](CHANGELOG.md)
+- [Código de Conduta](CODE_OF_CONDUCT.md)
+- [Política de Segurança](SECURITY.md)
+
+## Licença
+
+O código original deste projeto é distribuído sob a licença **MIT**. O texto oficial está em [LICENSE](LICENSE); há uma [tradução informativa para Português (Brasil)](LICENSE-PT-BR.md). As bibliotecas de terceiros mantêm suas próprias licenças e avisos; consulte [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md), [NOTICE](NOTICE) e o [registro de origem dos recursos visuais](ASSET_CREDITS.md). No aplicativo, a seção **Configurações → Sobre o App → Ver licenças e créditos** abre os avisos locais incluídos no build.
+
+A licença MIT não concede direitos sobre marcas, nomes, ícones, arquivos SoundFont ou outros conteúdos de terceiros que possam ser utilizados com o aplicativo.
 
 ---
 
-## 🤝 Contribuindo
+# English
 
-Veja o [CONTRIBUTING.md](CONTRIBUTING.md). Histórico de mudanças em [CHANGELOG.md](CHANGELOG.md).
+## About
 
-## 📄 Licença
+**NexusMIDI Pro** turns Android phones and tablets into a music workstation featuring a virtual keyboard and pads, a SoundFont synthesizer, MIDI connectivity, and performance tools. A Web version is also available, with features supported by the browser.
 
-MIT. Bibliotecas de terceiros em [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+The project is built with React, TypeScript, Capacitor, and SpessaSynth. The interface supports Brazilian Portuguese and English, as well as light, dark, and system themes.
+
+## Features
+
+### Keyboard, pads, and performance
+- Multitouch virtual keyboard with glissando, zoom, and scrolling.
+- 16 General MIDI pads across four banks (64 pad positions).
+- Chord Pads for single notes, chords, and custom intervals.
+- Velocity curves, scales, chords, and arpeggiator.
+- Metronome, Tap Tempo, and MIDI Clock.
+- Wake Lock to keep the screen awake during performance.
+
+### SoundFont synthesizer
+- Import `.sf2` SoundFont files into a local library.
+- Read instrument names, banks, and programs from imported files.
+- 16-channel multitimbral MIDI support, with per-channel controls.
+- Audio effects and controls, including EQ, compressor, delay, reverb, chorus, envelope, filter, vibrato, tuning, and polyphony.
+
+### MIDI connectivity and tools
+- USB (OTG) MIDI and Bluetooth LE MIDI on Android.
+- BLE MIDI peripheral mode for compatible devices and applications.
+- MIDI router with multiple inputs and outputs, filters, and transposition.
+- MIDI monitor for transmitted (TX) and received (RX) messages.
+- MIDI recorder with playback and `.mid` file export.
+- MIDI Learn, CC control presets, MIDI Panic, and Pitch Bend.
+
+> **Compatibility:** Native USB and Bluetooth LE MIDI features depend on Android, system permissions, and connected hardware. Browser functionality depends on the browser and its supported APIs.
+
+## Technology stack
+
+| Layer | Technology |
+| --- | --- |
+| Interface | React, TypeScript, Vite, and Tailwind CSS |
+| Audio | [SpessaSynth](https://github.com/spessasus/SpessaSynth) and Web Audio |
+| Android application | Capacitor 8 and a custom Java plugin |
+| Testing and quality | Vitest, Oxlint, Prettier, and GitHub Actions |
+
+## Requirements
+
+- Node.js **20.19 or later** for development, as specified in `package.json`. CI uses Node.js 22.
+- npm compatible with the installed Node.js version.
+- To build and run the Android app: JDK 21 and Android SDK. Android Studio is recommended.
+
+## Installation and development
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2.git
+cd nexus-midi-pro-2
+npm ci
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Vite prints the local development URL in the terminal (port 3000 by default).
+
+### Build for the Web
+
+```bash
+npm run build
+```
+
+### Prepare and build for Android
+
+```bash
+npm run cap:sync
+cd android
+./gradlew assembleDebug
+```
+
+On Windows PowerShell, use the Windows wrapper:
+
+```powershell
+npm run cap:sync
+cd android
+.\gradlew.bat assembleDebug
+```
+
+The debug APK is generated at:
+
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+You can also run `npm run android:debug` from the project root.
+
+## Available scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Starts the development server |
+| `npm run build` | Builds the Web version |
+| `npm run build:android` | Builds Web assets for the Android application |
+| `npm run cap:sync` | Builds Android assets and synchronizes Capacitor |
+| `npm run android:debug` | Builds the Android debug APK |
+| `npm run typecheck` | Runs the TypeScript type check |
+| `npm run lint` | Runs Oxlint |
+| `npm test` | Runs automated tests |
+| `npm run check` | Runs typecheck, lint, and tests |
+| `npm run format` | Formats supported source files |
+
+## Continuous integration and releases
+
+The workflow at `.github/workflows/build.yml` runs type checking, linting, tests, and the Web build on Pull Requests and configured pushes. The Android job does not run on Pull Requests; it builds a debug APK on pushes to the configured branches.
+
+To build a test APK from this branch while the Pull Request is under review:
+
+1. Open [GitHub Actions](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/actions/workflows/build.yml).
+2. Select the **CI & Build APK - NexusMIDI Pro** workflow.
+3. Click **Run workflow** and select the `fix/sf2-restore-and-storage` branch.
+4. When the run completes, open it and download the `NexusMIDI-Pro-debug-apk` artifact.
+
+To publish a signed Android Release, the maintainer must configure these GitHub Actions *Secrets*:
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+Keep the keystore and passwords secure and never commit them to the repository. After signing is configured, pushing a tag in the `vX.Y.Z` format triggers the Release workflow, which can publish signed APK and AAB files. Without signing configuration, the workflow may publish only a debug APK; that APK must not be treated as a signed production release.
+
+Follow builds on [GitHub Actions](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/actions).
+
+## Project structure
+
+```text
+src/
+├── components/     UI screens and components
+├── constants/      MIDI constants and tables
+├── hooks/          React hooks
+├── i18n/           Languages and translations
+├── lib/            UI-independent logic
+├── services/       MIDI, audio, synthesizer, and storage services
+└── bootstrap.ts    Service initialization
+android/            Native Android project and MIDI plugin
+.github/            Workflows and contribution templates
+```
+
+## Tests
+
+Run:
+
+```bash
+npm test
+```
+
+Automated tests cover MIDI logic, music tools, recording and playback, routing, services, storage, the SoundFont library, and internationalization. Test coverage depends on the tests currently present in the repository; CI does not replace testing on real devices and hardware.
+
+## SoundFonts and audio files
+
+This repository does not include `.sf2` files. Only import files that you are authorized to use. Users are responsible for checking the copyright and distribution terms of any SoundFonts used with the application.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes. Bug reports, improvement proposals, documentation, and Pull Requests are welcome.
+
+- [Report a bug](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/issues/new?template=feature_request.md)
+- [Changelog](CHANGELOG.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
+
+## License
+
+The original code in this project is distributed under the **MIT License**. The official license text is in [LICENSE](LICENSE); an [informational Brazilian Portuguese translation](LICENSE-PT-BR.md) is also available. Third-party libraries retain their own licenses and notices; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md), [NOTICE](NOTICE), and the [visual asset provenance register](ASSET_CREDITS.md). The app includes a local **Settings → About → View licenses and acknowledgments** page; build scripts collect the original license/NOTICE files from installed npm runtime packages.
+
+The MIT License does not grant rights to third-party trademarks, names, icons, SoundFont files, or other content that may be used with the application.

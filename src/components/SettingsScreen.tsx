@@ -1,4 +1,4 @@
-import { Globe, Moon, Sun, Monitor, Info, SunDim } from 'lucide-react';
+import { Globe, Moon, Sun, Monitor, Info, SunDim, Scale } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { tr, LANGUAGES, setLanguage } from '../i18n';
 import { prefsStore } from '../services/stores';
@@ -127,6 +127,16 @@ export function SettingsScreen({ onStatus }: Props) {
           <div className="flex flex-col gap-1">
             <p className="text-sm font-bold text-[var(--text-main)]">NexusMIDI Pro</p>
             <p className="text-xs text-[var(--text-muted)]">{tr('Versão')} v{APP_VERSION}</p>
+            <p className="text-xs text-[var(--text-muted)]">{tr('Código original licenciado sob MIT. Bibliotecas de terceiros mantêm suas próprias licenças.')}</p>
+            <a
+              href="/THIRD_PARTY_NOTICES.html"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex w-fit items-center gap-2 rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-semibold text-[var(--nexus-primary)] hover:bg-[var(--bg-elevated)]"
+            >
+              <Scale size={14} />
+              {tr('Ver licenças e créditos')}
+            </a>
           </div>
         </section>
 
