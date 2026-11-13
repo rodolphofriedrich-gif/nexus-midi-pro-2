@@ -1,4 +1,28 @@
-import { useCallback, useMemo, useState, useSyncExternalStore, useRef } from 'react';
+/**
+ * App.tsx — shell da aplicação NexusMIDI Pro.
+ *
+ * 🔗 Relacionamentos:
+ * - Monta o layout principal: `AppSidebar` + `AppHeader` + `<main>` com a aba ativa.
+ * - Eager (bundle inicial): `MidiKeyboard`, `MidiPadGrid`, `MidiStatusBar`, `VuMeterLive`
+ *   — são a tela principal, precisam abrir instantaneamente.
+ * - Lazy (`React.lazy` + `<Suspense>`): `MidiRouterScreen`, `MidiMonitorScreen`,
+ *   `StudioScreen`, `SettingsScreen` — telas secundárias que o usuário pode nunca abrir.
+ *   Reduz o bundle inicial sem penalizar a UX.
+ * - Consome: `prefsStore` (`useStore`), `synthService` (`useSyncExternalStore`) e
+ *   `midiManager` (direto para `clearLog`/`sendPitchBend`/`sendControlChange`).
+ * - Orquestra: `useAppHandlers` (notas, sustain, panic, refresh, exit),
+ *   `useMidiDevices` (USB/BLE), `useAppEffects` (back button, tema, wake lock).
+ * - `startOctave`/`padBank` vêm de `prefsStore` (persistidos) — não são mais `useState`.
+ */
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { AppHeader } from './app/components/AppHeader';
 import { AppSidebar } from './app/components/AppSidebar';
 import { ChannelSelectPopup } from './app/components/ChannelSelectPopup';
@@ -10,13 +34,9 @@ import {
 import { useAppHandlers } from './app/useAppHandlers';
 import { ExitDialog } from './components/ExitDialog';
 import { MidiKeyboard, MidiKeyboardHandle } from './components/MidiKeyboard';
-import { MidiMonitorScreen } from './components/MidiMonitorScreen';
 import { MidiPadGrid } from './components/MidiPadGrid';
-import { MidiRouterScreen } from './components/MidiRouterScreen';
 import { MidiStatusBar } from './components/MidiStatusBar';
-import { SettingsScreen } from './components/SettingsScreen';
 import { StatusToast } from './components/StatusToast';
-import { StudioScreen } from './components/StudioScreen';
 import { VuMeterLive } from './components/VuMeterLive';
 import { useMidiDevices } from './hooks/useMidiDevices';
 import { useStore } from './hooks/useStore';
@@ -26,7 +46,23 @@ import { midiManager } from './services/midiService';
 import { prefsStore } from './services/stores';
 import { synthService } from './services/synthService';
 
+// Lazy: telas secundárias. `isolatedModules` exige o padrão `.then(m => ({default: m.X}))`
+// porque os componentes são named exports (não default).
+const MidiRouterScreen   = lazy(() => import('./components/MidiRouterScreen').then((m) => ({ default: m.MidiRouterScreen })));
+const MidiMonitorScreen  = lazy(() => import('./components/MidiMonitorScreen').then((m) => ({ default: m.MidiMonitorScreen })));
+const StudioScreen       = lazy(() => import('./components/StudioScreen').then((m) => ({ default: m.StudioScreen })));
+const SettingsScreen     = lazy(() => import('./components/SettingsScreen').then((m) => ({ default: m.SettingsScreen })));
+
 type AppTab = 'play' | 'midi' | 'studio' | 'settings';
+
+/** Fallback das telas lazy — sem texto (para não exigir nova string i18n). */
+function ScreenFallback() {
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--border-color)] border-t-[var(--nexus-primary)]" />
+    </div>
+  );
+}
 
 export default function App() {
   const prefs = useStore(prefsStore);
@@ -44,8 +80,6 @@ export default function App() {
   const [isPadEditMode, setIsPadEditMode] = useState(false);
   const [isPadChannelOpen, setIsPadChannelOpen] = useState(false);
 
-  const [startOctave, setStartOctave] = useState(3);
-  const [padBank, setPadBank] = useState(0);
   const keyboardRef = useRef<MidiKeyboardHandle>(null);
 
   const [studioTab, setStudioTab] = useState<'synth' | 'mixer' | 'tools'>('synth');
@@ -68,10 +102,6 @@ export default function App() {
   });
   useLanguageAndTheme(prefs.language, prefs.theme);
   useWakeLock(prefs.wakeLock);
-
-  // O nível do VU meter NÃO mora mais neste componente: se ficasse aqui,
-  // cada nota MIDI re-renderizava o App inteiro. Agora está isolado em
-  // <VuMeterLive />, que só re-renderiza a si mesmo.
 
   const {
     handleNoteOn,
@@ -146,15 +176,15 @@ export default function App() {
 
           playTab={playTab}
           onPlayTabChange={setPlayTab}
-          startOctave={startOctave}
-          onStartOctaveChange={setStartOctave}
+          startOctave={prefs.startOctave}
+          onStartOctaveChange={(startOctave) => prefsStore.set({ startOctave })}
           sustain={prefs.sustain}
           onToggleSustain={handleToggleSustain}
           channel={prefs.channel}
           onOpenKeyboardChannel={() => keyboardRef.current?.openChannelPopup()}
           onOpenKeyboardSettings={() => keyboardRef.current?.openSettingsPopup()}
-          padBank={padBank}
-          onPadBankChange={setPadBank}
+          padBank={prefs.padBank}
+          onPadBankChange={(padBank) => prefsStore.set({ padBank })}
           padsChannel={prefs.padsChannel}
           onOpenPadChannel={() => setIsPadChannelOpen(true)}
           isPadEditMode={isPadEditMode}
@@ -202,7 +232,7 @@ export default function App() {
                 <div className="nexus-keyboard-container flex min-h-0 flex-1 flex-col">
                   <MidiKeyboard
                     ref={keyboardRef}
-                    startOctave={startOctave}
+                    startOctave={prefs.startOctave}
                     isConnected={canPlay}
                     selectedChannel={prefs.channel}
                     onSelectChannel={(channel) => { prefsStore.set({ channel }); showMessage(tr('Canal: {n}', { n: channel }), 'info', 1500); }}
@@ -232,7 +262,7 @@ export default function App() {
                 <div className="py-1"><VuMeterLive /></div>
                 <div className="flex min-h-0 flex-1 flex-col">
                   <MidiPadGrid
-                    bank={padBank}
+                    bank={prefs.padBank}
                     isActive={true}
                     isConnected={canPlay}
                     onNoteOn={(note, velocity, sourceId) => handleNoteOn(note, prefs.padsChannel, velocity, sourceId)}
@@ -247,23 +277,29 @@ export default function App() {
 
           {activeTab === 'midi' && (
             <div className="nexus-screen-container flex min-h-0 flex-1 flex-col overflow-hidden">
-              {midiTab === 'router' ? (
-                <MidiRouterScreen destinations={devices.destinations} connectedDestinations={devices.connected} onRefresh={devices.refresh} isRefreshing={isRouterRefreshing} />
-              ) : (
-                <MidiMonitorScreen filter={monitorFilter} paused={monitorPaused} />
-              )}
+              <Suspense fallback={<ScreenFallback />}>
+                {midiTab === 'router' ? (
+                  <MidiRouterScreen destinations={devices.destinations} connectedDestinations={devices.connected} onRefresh={devices.refresh} isRefreshing={isRouterRefreshing} />
+                ) : (
+                  <MidiMonitorScreen filter={monitorFilter} paused={monitorPaused} />
+                )}
+              </Suspense>
             </div>
           )}
 
           {activeTab === 'studio' && (
             <div className="nexus-screen-container flex min-h-0 flex-1 flex-col overflow-hidden">
-              <StudioScreen activeTab={studioTab} channel={prefs.channel} isConnected={canPlay} onStatus={(message, type = 'info') => showMessage(message, type, 3000)} />
+              <Suspense fallback={<ScreenFallback />}>
+                <StudioScreen activeTab={studioTab} channel={prefs.channel} isConnected={canPlay} onStatus={(message, type = 'info') => showMessage(message, type, 3000)} />
+              </Suspense>
             </div>
           )}
 
           {activeTab === 'settings' && (
             <div className="nexus-screen-container flex min-h-0 flex-1 flex-col overflow-hidden">
-              <SettingsScreen onStatus={(message, type = 'info') => showMessage(message, type, 3000)} />
+              <Suspense fallback={<ScreenFallback />}>
+                <SettingsScreen onStatus={(message, type = 'info') => showMessage(message, type, 3000)} />
+              </Suspense>
             </div>
           )}
         </main>
