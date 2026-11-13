@@ -226,17 +226,18 @@ export const mixerStore = createStore<MixerStateAll>(
     // Migração one-shot do formato antigo (estado global em localStorage sob
     // `nexusmidi_mixer_state`). A primeira vez que o app abrir com esta versão,
     // o estado antigo vira o canal 1 e a chave velha é removida.
-    legacy: (storage) => {
-      try {
-        const old = storage.getItem('nexusmidi_mixer_state');
-        if (old) {
-          const parsed = JSON.parse(old);
-          storage.removeItem('nexusmidi_mixer_state');
-          return { byChannel: { 1: cleanMixer(parsed) } };
-        }
-      } catch { /* ignora */ }
-      return { byChannel: {} };
-    },
+   legacy: (storage) => {
+  const byChannel: Record<number, MixerState> = {};
+  try {
+    const old = storage.getItem('nexusmidi_mixer_state');
+    if (old) {
+      const parsed = JSON.parse(old);
+      storage.removeItem('nexusmidi_mixer_state');
+      byChannel[1] = cleanMixer(parsed);
+    }
+  } catch { /* ignora */ }
+  return { byChannel };
+},
     sanitize: (state) => {
       const byChannel: Record<number, MixerState> = {};
       for (const [key, value] of Object.entries(state.byChannel ?? {})) {
