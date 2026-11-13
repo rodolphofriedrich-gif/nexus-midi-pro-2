@@ -7,12 +7,17 @@
  * - `toolsStore`      → consumido por `PerformancePanel.tsx`, `ArpPanel.tsx`, `MetronomePanel.tsx`.
  * - `runtimeStore`    → (memória) `ArpPanel.tsx`, `MetronomePanel.tsx`.
  * - `channelsStore` / `channelSettingsStore` → painéis do Mixer/CC.
+ * - `mixerStore`             → `MidiControlsScreen.tsx` (faders do Mixer, POR CANAL).
  * - `synthSettingsStore` → alimenta `synthService.applyGlobalSettings/applyChannelSettings`.
  * - `learnStore`      → consumido por `LearnPanel.tsx`.
  *
  * 📝 Notas:
  * - `startOctave` e `padBank` passaram a ser persistidos (antes eram `useState` no App.tsx
  *   e voltavam pro padrão a cada reload). Faixas: octave 1–6, bank 0–3.
+ * - `mixerStore` substituiu o estado global que ficava em `localStorage` (chave
+ *   `nexusmidi_mixer_state`) dentro de `MidiControlsScreen.tsx`. Agora os faders
+ *   são POR CANAL e a persistência é debounced pelo `createStore`. A chave antiga
+ *   é migrada para o canal 1 no primeiro load.
  */
 import { clampInt } from '../lib/midiMath';
 import { createMemoryStorage, createStore } from '../lib/storeCore';
@@ -153,6 +158,120 @@ export const channelSettingsStore = createStore<ChannelSettingsState>(
     },
   },
 );
+
+
+// ----------------------------------------------------------------- Mixer / CC
+/**
+ * Estado dos faders/knobs do painel Mixer/CC. Separado de `ChannelSettings`
+ * porque os campos não se sobrepõem conceitualmente (aqui é controle de
+ * performance + program; lá são parâmetros do sintetizador).
+ */
+export interface MixerState {
+  modWheel: number;     // CC1,   0–127
+  volume: number;       // CC7,   0–127
+  expression: number;   // CC11,  0–127
+  pan: number;          // CC10,  0–127 (64 = centro)
+  program: number;      // PC,    1–128
+  pitchBend: number;    // PB,    0–16383 (8192 = centro)
+  pressure: number;     // CP,    0–127
+  reverb: number;       // CC91,  0–127
+  chorus: number;       // CC93,  0–127
+  cutoff: number;       // CC74,  0–127
+  resonance: number;    // CC71,  0–127
+}
+
+export const DEFAULT_MIXER: MixerState = {
+  modWheel: 0,
+  volume: 100,
+  expression: 127,
+  pan: 64,
+  program: 1,
+  pitchBend: 8192,
+  pressure: 0,
+  reverb: 40,
+  chorus: 15,
+  cutoff: 127,
+  resonance: 64,
+};
+
+export interface MixerStateAll {
+  byChannel: Record<number, MixerState>;
+}
+
+function cleanMixer(raw: unknown): MixerState {
+  const src = (raw && typeof raw === 'object' ? raw : {}) as Partial<Record<keyof MixerState, unknown>>;
+  const num = (v: unknown, lo: number, hi: number, fallback: number): number => {
+    const n = Number(v);
+    return Number.isFinite(n) ? clampInt(n, lo, hi) : fallback;
+  };
+  return {
+    modWheel: num(src.modWheel, 0, 127, DEFAULT_MIXER.modWheel),
+    volume: num(src.volume, 0, 127, DEFAULT_MIXER.volume),
+    expression: num(src.expression, 0, 127, DEFAULT_MIXER.expression),
+    pan: num(src.pan, 0, 127, DEFAULT_MIXER.pan),
+    program: num(src.program, 1, 128, DEFAULT_MIXER.program),
+    pitchBend: num(src.pitchBend, 0, 16383, DEFAULT_MIXER.pitchBend),
+    pressure: num(src.pressure, 0, 127, DEFAULT_MIXER.pressure),
+    reverb: num(src.reverb, 0, 127, DEFAULT_MIXER.reverb),
+    chorus: num(src.chorus, 0, 127, DEFAULT_MIXER.chorus),
+    cutoff: num(src.cutoff, 0, 127, DEFAULT_MIXER.cutoff),
+    resonance: num(src.resonance, 0, 127, DEFAULT_MIXER.resonance),
+  };
+}
+
+export const mixerStore = createStore<MixerStateAll>(
+  'nexusmidi.mixer',
+  { byChannel: {} },
+  {
+    // Migração one-shot do formato antigo (estado global em localStorage sob
+    // `nexusmidi_mixer_state`). A primeira vez que o app abrir com esta versão,
+    // o estado antigo vira o canal 1 e a chave velha é removida.
+    legacy: (storage) => {
+      try {
+        const old = storage.getItem('nexusmidi_mixer_state');
+        if (old) {
+          const parsed = JSON.parse(old);
+          storage.removeItem('nexusmidi_mixer_state');
+          return { byChannel: { 1: cleanMixer(parsed) } };
+        }
+      } catch { /* ignora */ }
+      return { byChannel: {} };
+    },
+    sanitize: (state) => {
+      const byChannel: Record<number, MixerState> = {};
+      for (const [key, value] of Object.entries(state.byChannel ?? {})) {
+        const ch = Number(key);
+        if (!Number.isInteger(ch) || ch < 1 || ch > 16) continue;
+        byChannel[ch] = cleanMixer(value);
+      }
+      return { byChannel };
+    },
+  },
+);
+
+/** Retorna o estado de um canal, com fallback nos defaults. */
+export const mixerForChannel = (state: MixerStateAll, channel: number): MixerState =>
+  state.byChannel[channel] ?? DEFAULT_MIXER;
+
+/** Atualiza um subconjunto do estado de um canal (merge raso). */
+export function updateMixerForChannel(channel: number, patch: Partial<MixerState>): void {
+  mixerStore.set((prev) => ({
+    byChannel: {
+      ...prev.byChannel,
+      [channel]: { ...mixerForChannel(prev, channel), ...patch },
+    },
+  }));
+}
+
+/** Remove o estado de um canal (volta aos defaults). */
+export function resetMixerForChannel(channel: number): void {
+  mixerStore.set((prev) => {
+    if (!(channel in prev.byChannel)) return prev;
+    const next = { ...prev.byChannel };
+    delete next[channel];
+    return { byChannel: next };
+  });
+}
 
 // ----------------------------------------------------------------------- ferramentas
 export interface ToolsState {
