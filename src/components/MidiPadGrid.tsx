@@ -141,16 +141,53 @@ export function MidiPadGrid({ bank, isActive, isConnected, onNoteOn, onNoteOff, 
       const padIndex = activePointersRef.current.get(e.pointerId);
       if (padIndex !== undefined) releasePad(padIndex, e.pointerId);
     };
+
+    const handleVisibility = () => {
+      if (document.hidden) releaseAllNotes();
+    };
+
     window.addEventListener('blur', releaseAllNotes);
+    window.addEventListener('pagehide', releaseAllNotes);
     window.addEventListener('pointerup', handleGlobalPointerUp);
     window.addEventListener('pointercancel', handleGlobalPointerUp);
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
       window.removeEventListener('blur', releaseAllNotes);
+      window.removeEventListener('pagehide', releaseAllNotes);
       window.removeEventListener('pointerup', handleGlobalPointerUp);
       window.removeEventListener('pointercancel', handleGlobalPointerUp);
+      document.removeEventListener('visibilitychange', handleVisibility);
       releaseAllNotes();
     };
   }, [bank]);
+
+  // Watchdog: libera tudo se houver pads ativos sem atividade por 20s.
+  useEffect(() => {
+    const STUCK_TIMEOUT_MS = 20_000;
+    let lastActivity = Date.now();
+    const bumpActivity = () => { lastActivity = Date.now(); };
+
+    window.addEventListener('pointerdown', bumpActivity, true);
+    window.addEventListener('pointermove', bumpActivity, true);
+    window.addEventListener('pointerup', bumpActivity, true);
+    window.addEventListener('pointercancel', bumpActivity, true);
+
+    const interval = setInterval(() => {
+      if (activePadNotesRef.current.size === 0) return;
+      if (Date.now() - lastActivity < STUCK_TIMEOUT_MS) return;
+      releaseAllNotes();
+      lastActivity = Date.now();
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('pointerdown', bumpActivity, true);
+      window.removeEventListener('pointermove', bumpActivity, true);
+      window.removeEventListener('pointerup', bumpActivity, true);
+      window.removeEventListener('pointercancel', bumpActivity, true);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     releaseAllNotes();
