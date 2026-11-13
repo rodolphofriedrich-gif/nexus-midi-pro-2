@@ -49,6 +49,22 @@ O lockfile contém 592 entradas de pacotes em `node_modules`. Os metadados de li
 
 Essa contagem é um retrato do lockfile consultado e pode mudar conforme as dependências mudarem. Ela não substitui a leitura do texto de licença e dos avisos de cada pacote.
 
+## Dependências nativas Android
+
+Além do lockfile npm, a configuração Gradle declara dependências Android nativas:
+
+| Componente | Versão configurada | Licença |
+| --- | ---: | --- |
+| AndroidX AppCompat | 1.7.1 | Apache-2.0 |
+| AndroidX CoordinatorLayout | 1.3.0 | Apache-2.0 |
+| AndroidX Core SplashScreen | 1.2.0 | Apache-2.0 |
+| Apache Cordova Android Framework | 14.0.1 | Apache-2.0 |
+| Capacitor Android e plugins usados | 8.x | MIT |
+
+O projeto também declara o Android Gradle Plugin 8.13.0 e o Google Services Gradle Plugin 4.4.4 como ferramentas de build. O plugin Google Services só é aplicado quando existe um arquivo `google-services.json` no projeto Android. Essas ferramentas não são dependências de execução do aplicativo.
+
+Referências: [AndroidX](https://developer.android.com/jetpack/androidx), [Apache Cordova Android](https://github.com/apache/cordova-android), [Capacitor](https://github.com/ionic-team/capacitor), [Android Open Source Project licensing](https://source.android.com/docs/setup/contribute/licenses).
+
 ## Textos das licenças
 
 - [MIT](https://opensource.org/license/mit)
@@ -119,6 +135,22 @@ The lockfile contains 592 package entries under `node_modules`. Their license me
 | MIT OR CC0-1.0 | 1 |
 
 This count is a snapshot of the reviewed lockfile and may change as dependencies change. It does not replace reviewing each package's license text and notices.
+
+## Native Android dependencies
+
+In addition to the npm lockfile, the Gradle configuration declares native Android dependencies:
+
+| Component | Configured version | License |
+| --- | ---: | --- |
+| AndroidX AppCompat | 1.7.1 | Apache-2.0 |
+| AndroidX CoordinatorLayout | 1.3.0 | Apache-2.0 |
+| AndroidX Core SplashScreen | 1.2.0 | Apache-2.0 |
+| Apache Cordova Android Framework | 14.0.1 | Apache-2.0 |
+| Capacitor Android and used plugins | 8.x | MIT |
+
+The project also declares Android Gradle Plugin 8.13.0 and Google Services Gradle Plugin 4.4.4 as build tools. The Google Services plugin is applied only when a `google-services.json` file exists in the Android project. These tools are not runtime application dependencies.
+
+References: [AndroidX](https://developer.android.com/jetpack/androidx), [Apache Cordova Android](https://github.com/apache/cordova-android), [Capacitor](https://github.com/ionic-team/capacitor), [Android Open Source Project licensing](https://source.android.com/docs/setup/contribute/licenses).
 
 ## License texts
 
