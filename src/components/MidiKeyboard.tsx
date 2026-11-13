@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { setActiveNotesCount } from '../services/activeNotesStore';
 import { Activity, X, Maximize, MoveHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { tr } from '../i18n';
 
@@ -15,7 +16,6 @@ interface MidiKeyboardProps {
   onNoteOn: (note: number) => void;
   onNoteOff: (note: number) => void;
   onDisabledPress: () => void;
-  onActiveNotesChange?: (count: number) => void;
   isActive: boolean;
   isSustainActive: boolean;
   onToggleSustain: () => void;
@@ -94,7 +94,6 @@ function Popup({ title, onClose, children, widthClass = 'max-w-md' }: PopupProps
 export const MidiKeyboard = forwardRef<MidiKeyboardHandle, MidiKeyboardProps>(({
   startOctave,
   isConnected, selectedChannel, onSelectChannel, onNoteOn, onNoteOff, onDisabledPress,
-  onActiveNotesChange,
   isActive, isSustainActive, onToggleSustain,
   selectedVelocity, onSelectVelocity,
   onPitchBend, onModWheel
@@ -127,8 +126,10 @@ export const MidiKeyboard = forwardRef<MidiKeyboardHandle, MidiKeyboardProps>(({
   }));
 
   useEffect(() => {
-    if (onActiveNotesChange) onActiveNotesChange(pressedNotes.size);
-  }, [pressedNotes.size, onActiveNotesChange]);
+    setActiveNotesCount(pressedNotes.size);
+  }, [pressedNotes.size]);
+
+  useEffect(() => () => setActiveNotesCount(0), []);
 
   useEffect(() => { onNoteOffRef.current = onNoteOff; }, [onNoteOff]);
   useEffect(() => { onDisabledPressRef.current = onDisabledPress; }, [onDisabledPress]);
