@@ -343,7 +343,7 @@ export const en: Record<string, string> = {
   "Velocity (0-127)": "Velocity (0-127)",
   "Velocity fixa": "Fixed velocity",
   "Versão": "Version",
-  "Vibrato (Profundidade)": "Vibrato (Depth)",
+  "Mod Wheel (CC1 / Vibrato)": "Mod Wheel (CC1 / Vibrato)",
   "Vintage": "Vintage",
   "Visível": "Visible",
   "Vol": "Vol",
