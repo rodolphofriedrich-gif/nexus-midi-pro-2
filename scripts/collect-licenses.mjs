@@ -8,8 +8,8 @@ const outputPath = path.join(distPath, 'THIRD_PARTY_NOTICES');
 const lock = JSON.parse(await readFile(lockPath, 'utf8'));
 
 const licenseNames = new Set([
-  'LICENSE', 'LICENSE.md', 'LICENSE.txt', 'LICENCE', 'LICENCE.md',
-  'COPYING', 'COPYING.txt', 'NOTICE', 'NOTICE.md', 'NOTICE.txt',
+  'LICENSE', 'LICENSE.MD', 'LICENSE.TXT', 'LICENCE', 'LICENCE.MD',
+  'COPYING', 'COPYING.TXT', 'NOTICE', 'NOTICE.MD', 'NOTICE.TXT',
 ]);
 
 const escapeHtml = (value) =>
@@ -19,7 +19,7 @@ const escapeHtml = (value) =>
 
 const packages = Object.entries(lock.packages)
   .filter(([packagePath, metadata]) =>
-    packagePath.startsWith('node_modules/') && !metadata.dev && !metadata.optional,
+    packagePath.startsWith('node_modules/') && !metadata.dev,
   )
   .map(([packagePath, metadata]) => ({
     packagePath,
