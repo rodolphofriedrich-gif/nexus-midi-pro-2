@@ -177,7 +177,7 @@ Leia [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviar alterações. São bem-v
 
 ## Licença
 
-O código original deste projeto é distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE). As bibliotecas de terceiros mantêm suas próprias licenças e avisos; consulte [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+O código original deste projeto é distribuído sob a licença **MIT**. O texto oficial está em [LICENSE](LICENSE); há uma [tradução informativa para Português (Brasil)](LICENSE-PT-BR.md). As bibliotecas de terceiros mantêm suas próprias licenças e avisos; consulte [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 A licença MIT não concede direitos sobre marcas, nomes, ícones, arquivos SoundFont ou outros conteúdos de terceiros que possam ser utilizados com o aplicativo.
 
@@ -349,6 +349,6 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes. Bug reports, 
 
 ## License
 
-The original code in this project is distributed under the **MIT License**. See [LICENSE](LICENSE). Third-party libraries retain their own licenses and notices; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+The original code in this project is distributed under the **MIT License**. The official license text is in [LICENSE](LICENSE); an [informational Brazilian Portuguese translation](LICENSE-PT-BR.md) is also available. Third-party libraries retain their own licenses and notices; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 The MIT License does not grant rights to third-party trademarks, names, icons, SoundFont files, or other content that may be used with the application.
