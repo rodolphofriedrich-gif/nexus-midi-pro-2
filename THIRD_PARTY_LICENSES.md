@@ -70,7 +70,7 @@ O lockfile contém 592 entradas de pacotes em `node_modules`. Os metadados de li
 | CC-BY-4.0 | 1 |
 | MIT OR CC0-1.0 | 1 |
 
-Essa contagem é um retrato do lockfile consultado e pode mudar conforme as dependências mudarem. Ela não substitui a leitura do texto de licença e dos avisos de cada pacote.
+Essa contagem é um retrato de todas as entradas do lockfile, incluindo dependências exclusivas de desenvolvimento e ferramentas de build que não são incorporadas ao aplicativo final. Ela não representa, portanto, a lista de componentes distribuídos no APK. Para o conjunto npm de execução, o lockfile desta revisão registra 14 pacotes: 8 MIT, 2 ISC, 3 Apache-2.0 e 1 0BSD. A lista e as versões estão na tabela acima. A distribuição final Android também incorpora dependências resolvidas pelo Gradle, que devem ser conferidas no build específico antes de cada publicação.
 
 ## Dependências nativas Android
 
@@ -103,6 +103,10 @@ Referências: [AndroidX](https://developer.android.com/jetpack/androidx), [Apach
 - [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)
 
 ## Avisos de distribuição
+
+O repositório inclui `NOTICE` com os créditos e avisos de marca reproduzidos do projeto SpessaSynth. Os textos MIT, Apache-2.0, ISC e 0BSD usados pelo conjunto npm de execução são incluídos em `public/licenses/` e copiados para o build Web/Android. A página local `public/THIRD_PARTY_NOTICES.html` fica acessível em **Configurações → Sobre o App → Ver licenças e créditos**. Ela é um resumo de créditos e links; os avisos originais dos pacotes continuam sendo a referência para cada componente.
+
+A página local não substitui uma conferência do conjunto Gradle efetivamente empacotado no APK. Antes de distribuir uma versão, gere e revise o relatório de dependências Android resolvidas e confira se todos os avisos/copyrights exigidos estão presentes no pacote final.
 
 - Preserve os avisos de direitos autorais, textos de licença e arquivos `NOTICE` fornecidos pelos pacotes de terceiros quando redistribuir esses componentes.
 - Componentes licenciados sob Apache-2.0 e MPL-2.0 possuem condições próprias; consulte os textos oficiais antes de modificar ou redistribuir esses componentes.
