@@ -10,8 +10,8 @@
   },
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
-    "build:android": "vite build --mode android",
+    "build": "vite build && node scripts/collect-licenses.mjs",
+    "build:android": "vite build --mode android && node scripts/collect-licenses.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src",
@@ -22,7 +22,8 @@
     "check": "npm run typecheck && npm run lint && npm run test",
     "cap:sync": "npm run build:android && cap sync android",
     "android:debug": "npm run cap:sync && cd android && ./gradlew assembleDebug",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "licenses:collect": "node scripts/collect-licenses.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",
