@@ -92,6 +92,14 @@ cd android
 ./gradlew assembleDebug
 ```
 
+No Windows PowerShell, use o wrapper correspondente:
+
+```powershell
+npm run cap:sync
+cd android
+.\gradlew.bat assembleDebug
+```
+
 O APK de depuração é gerado em:
 
 `android/app/build/outputs/apk/debug/app-debug.apk`
@@ -254,6 +262,14 @@ npm run build
 npm run cap:sync
 cd android
 ./gradlew assembleDebug
+```
+
+On Windows PowerShell, use the Windows wrapper:
+
+```powershell
+npm run cap:sync
+cd android
+.\gradlew.bat assembleDebug
 ```
 
 The debug APK is generated at:
