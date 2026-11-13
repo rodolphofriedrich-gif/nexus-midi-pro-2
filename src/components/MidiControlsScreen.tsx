@@ -3,16 +3,15 @@
  *
  * 🔗 Relacionamentos:
  * - Renderizado por: `StudioScreen.tsx` (aba "Mixer / CC").
- * - Consome: `mixerStore` (services/stores.ts) — faders por canal.
+ * - Consome: `channelSettingsStore` (services/stores.ts) — fonte única por canal
+ *   (mixer + synth). `mixerStore` foi removido nesta versão.
  * - Consome: `prefsStore` — `sustain` global (o pedal é enviado a 16 canais).
  * - Consome: `midiManager` — `sendControlChange`, `sendProgramChange`,
  *   `sendPitchBend`, `sendChannelPressure`, `sendPanic`.
  * - Faders: `StudioFader` (memo, hardware-look).
  * - Presets: salvos em `localStorage` (`nexusmidi_controls_presets_v1`),
- *   snapshots globais aplicados ao canal atual. A persistência dos faders
- *   é delegada ao `mixerStore` (debounced internamente).
- * - Bug-fix histórico: antes o estado era global em `localStorage` e não
- *   acompanhava a troca de canal; agora cada canal tem seu próprio estado.
+ *   snapshots aplicados ao canal atual.
+ * - `resetMixer` reseta apenas os 11 campos do mixer (não os do synth).
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Play, Save, Trash2, ShieldAlert, RotateCcw } from 'lucide-react';
@@ -22,12 +21,12 @@ import { midiManager } from '../services/midiService';
 import { useStore } from '../hooks/useStore';
 import {
   prefsStore,
-  mixerStore,
-  mixerForChannel,
-  updateMixerForChannel,
-  resetMixerForChannel,
-  type MixerState,
+  channelSettingsStore,
+  channelSettingsOf,
+  updateChannelSettings,
+  type ChannelSettings,
 } from '../services/stores';
+import { DEFAULT_CHANNEL_SETTINGS } from '../services/synthTypes';
 import { StudioFader } from './StudioFader';
 
 type MidiPreset = {
@@ -44,6 +43,12 @@ type MidiPreset = {
 };
 
 const PRESETS_KEY = 'nexusmidi_controls_presets_v1';
+
+/** Campos do mixer (resetMixer age somente sobre estes). */
+const MIXER_KEYS: ReadonlyArray<keyof ChannelSettings> = [
+  'modWheel', 'volume', 'expression', 'pan', 'program', 'pitchBend', 'pressure',
+  'reverb', 'chorus', 'cutoff', 'resonance',
+];
 
 interface Props {
   channel: number;
@@ -75,14 +80,16 @@ function ChannelBadge({ channel }: { channel: number }) {
 
 export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
   const prefs = useStore(prefsStore);
-  const mixerAll = useStore(mixerStore);
+  const channelSettingsState = useStore(channelSettingsStore);
 
-  // Estado derivado do store: muda automaticamente quando o canal troca.
-  const state = mixerForChannel(mixerAll, channel);
+  // Estado derivado: muda automaticamente quando o canal troca.
+  const state = channelSettingsOf(channelSettingsState, channel);
   const { modWheel, volume, expression, pan, program, pitchBend, reverb, chorus, cutoff, resonance } = state;
 
-  const updateState = <K extends keyof MixerState>(key: K, value: MixerState[K]) =>
-    updateMixerForChannel(channel, { [key]: value } as Partial<MixerState>);
+  const patchChannel = useCallback(
+    (patch: Partial<ChannelSettings>) => updateChannelSettings(channel, patch),
+    [channel],
+  );
 
   const [presetName, setPresetName] = useState(() => tr('Meu preset'));
   const [presets, setPresets] = useState<MidiPreset[]>(loadPresets);
@@ -93,7 +100,12 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
   }, [presets]);
 
   const resetControls = useCallback(() => {
-    resetMixerForChannel(channel);
+    const patch: Partial<ChannelSettings> = {};
+    for (const key of MIXER_KEYS) {
+      // Tipagem: cada `key` é atribuível a si mesmo em Partial<ChannelSettings>.
+      (patch as Record<keyof ChannelSettings, number>)[key] = DEFAULT_CHANNEL_SETTINGS[key];
+    }
+    updateChannelSettings(channel, patch);
     onStatus(tr('Controles redefinidos localmente.'), 'info');
   }, [channel, onStatus]);
 
@@ -126,8 +138,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
     }
     setBusy(true);
     try {
-      // Atualiza só o canal atual, sem tocar nos outros.
-      updateMixerForChannel(channel, {
+      patchChannel({
         modWheel: preset.modWheel,
         volume: preset.volume,
         expression: preset.expression,
@@ -158,7 +169,12 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
   const savePreset = () => {
     const name = presetName.trim();
     if (!name) { onStatus(tr('Digite um nome para o preset.'), 'warn'); return; }
-    const preset: MidiPreset = { id: uid('preset-'), name, sustain: prefs.sustain, ...state };
+    const preset: MidiPreset = {
+      id: uid('preset-'),
+      name,
+      sustain: prefs.sustain,
+      modWheel, volume, expression, pan, program, pitchBend, pressure,
+    };
     setPresets((current) => [preset, ...current]);
     onStatus(tr('Preset “{name}” salvo neste dispositivo.', { name }), 'success');
   };
@@ -188,15 +204,15 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
     <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto custom-scrollbar bg-[var(--bg-app)] p-2 sm:p-3 md:flex-row md:overflow-hidden">
       
       <div className="grid grid-cols-4 gap-2 bg-[var(--bg-app)] p-2 rounded-2xl border border-[var(--border-color)] shadow-inner h-[240px] sm:h-[280px] shrink-0 md:h-auto md:min-h-0 md:min-w-0 md:flex-1 md:shrink md:grid-cols-8 md:grid-rows-1">
-        <StudioFader label="MOD" sublabel="CC 1" value={modWheel} onChange={(v) => updateState('modWheel', v)} onCommit={(v) => void sendCC(1, v, 'Modulação')} />
-        <StudioFader tone="level" label="VOL" sublabel="CC 7" value={volume} onChange={(v) => updateState('volume', v)} onCommit={(v) => void sendCC(7, v, 'Volume')} />
-        <StudioFader label="EXP" sublabel="CC 11" value={expression} onChange={(v) => updateState('expression', v)} onCommit={(v) => void sendCC(11, v, 'Expressão')} />
-        <StudioFader label="PAN" sublabel="CC 10" value={pan} onChange={(v) => updateState('pan', v)} onCommit={(v) => void sendCC(10, v, 'Panorama')} />
+        <StudioFader label="MOD" sublabel="CC 1" value={modWheel} onChange={(v) => patchChannel({ modWheel: v })} onCommit={(v) => void sendCC(1, v, 'Modulação')} />
+        <StudioFader tone="level" label="VOL" sublabel="CC 7" value={volume} onChange={(v) => patchChannel({ volume: v })} onCommit={(v) => void sendCC(7, v, 'Volume')} />
+        <StudioFader label="EXP" sublabel="CC 11" value={expression} onChange={(v) => patchChannel({ expression: v })} onCommit={(v) => void sendCC(11, v, 'Expressão')} />
+        <StudioFader label="PAN" sublabel="CC 10" value={pan} onChange={(v) => patchChannel({ pan: v })} onCommit={(v) => void sendCC(10, v, 'Panorama')} />
         
-        <StudioFader label="REV" sublabel="CC 91" value={reverb} onChange={(v) => updateState('reverb', v)} onCommit={(v) => void sendCC(91, v, 'Reverb')} />
-        <StudioFader label="CHO" sublabel="CC 93" value={chorus} onChange={(v) => updateState('chorus', v)} onCommit={(v) => void sendCC(93, v, 'Chorus')} />
-        <StudioFader label="CUT" sublabel="CC 74" value={cutoff} onChange={(v) => updateState('cutoff', v)} onCommit={(v) => void sendCC(74, v, 'Cutoff')} />
-        <StudioFader label="RES" sublabel="CC 71" value={resonance} onChange={(v) => updateState('resonance', v)} onCommit={(v) => void sendCC(71, v, 'Ressonância')} />
+        <StudioFader label="REV" sublabel="CC 91" value={reverb} onChange={(v) => patchChannel({ reverb: v })} onCommit={(v) => void sendCC(91, v, 'Reverb')} />
+        <StudioFader label="CHO" sublabel="CC 93" value={chorus} onChange={(v) => patchChannel({ chorus: v })} onCommit={(v) => void sendCC(93, v, 'Chorus')} />
+        <StudioFader label="CUT" sublabel="CC 74" value={cutoff} onChange={(v) => patchChannel({ cutoff: v })} onCommit={(v) => void sendCC(74, v, 'Cutoff')} />
+        <StudioFader label="RES" sublabel="CC 71" value={resonance} onChange={(v) => patchChannel({ resonance: v })} onCommit={(v) => void sendCC(71, v, 'Ressonância')} />
       </div>
 
       <div className="flex shrink-0 flex-col gap-3 md:min-h-0 md:w-72 lg:w-[340px] md:overflow-y-auto md:pr-1 custom-scrollbar">
@@ -245,7 +261,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
               <div className="flex gap-2">
                 <input 
                   type="number" min="1" max="128" value={program} 
-                  onChange={(event) => updateState('program', Math.max(1, Math.min(128, Number(event.target.value) || 1)))} 
+                  onChange={(event) => patchChannel({ program: Math.max(1, Math.min(128, Number(event.target.value) || 1)) })} 
                   className="min-w-0 w-12 h-11 rounded-lg border border-[var(--border-color)] bg-[var(--bg-panel)] px-1 font-mono text-sm text-center text-[var(--nexus-primary)] outline-none focus:border-indigo-500" 
                 />
                 <button 
@@ -292,7 +308,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
                 aria-label="Pitch Bend" 
                 className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" 
                 type="range" min="0" max="16383" value={pitchBend} 
-                onChange={(event) => updateState('pitchBend', Number(event.target.value))} 
+                onChange={(event) => patchChannel({ pitchBend: Number(event.target.value) })} 
                 onPointerUp={(event) => void sendAction(() => midiManager.sendPitchBend(channel, Number((event.target as HTMLInputElement).value)), tr('Pitch Bend enviado • Canal {channel}', { channel }))} 
                 onKeyUp={(event) => void sendAction(() => midiManager.sendPitchBend(channel, Number((event.target as HTMLInputElement).value)), tr('Pitch Bend enviado • Canal {channel}', { channel }))} 
               />
@@ -309,7 +325,7 @@ export function MidiControlsScreen({ channel, isConnected, onStatus }: Props) {
             <button 
               type="button"
               disabled={busy || !isConnected} 
-              onClick={() => { updateState('pitchBend', 8192); void sendAction(() => midiManager.sendPitchBend(channel, 8192), tr('Pitch Bend centralizado • Canal {channel}', { channel })); }} 
+              onClick={() => { patchChannel({ pitchBend: 8192 }); void sendAction(() => midiManager.sendPitchBend(channel, 8192), tr('Pitch Bend centralizado • Canal {channel}', { channel })); }} 
               className="flex w-full h-11 items-center justify-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-elevated)] px-2 text-xs font-bold text-[var(--text-main)] disabled:opacity-40 hover:bg-[var(--bg-panel)] transition"
             >
               <RotateCcw size={14} /> {tr('Centralizar')}
