@@ -45,6 +45,7 @@ import { tr } from './i18n';
 import { midiManager } from './services/midiService';
 import { prefsStore } from './services/stores';
 import { synthService } from './services/synthService';
+import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
 
 // Lazy: telas secundárias. `isolatedModules` exige o padrão `.then(m => ({default: m.X}))`
 // porque os componentes são named exports (não default).
@@ -145,7 +146,7 @@ export default function App() {
 
   return (
     <div className="nexus-app fixed inset-0 flex h-[100dvh] w-full select-none overflow-hidden font-sans antialiased bg-[var(--bg-app)] text-[var(--text-main)]">
-
+      <PwaUpdatePrompt />
       <AppSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
