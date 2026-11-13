@@ -1,3 +1,14 @@
+/**
+ * useMidiDevices — estado e ações de conexão USB/BLE.
+ *
+ * 🔗 Relacionamentos:
+ * - Consumido por: `App.tsx` (passa `refresh`, `toggleConnect`, etc. para
+ *   `AppSidebar`, `MidiRouterScreen`, `useAppHandlers`).
+ * - Consome: `midiManager` (midiService.ts), que registra os callbacks
+ *   `handleRefresh` e `handleDisconnect` (usados aqui).
+ * - `refresh(onError?)`: agora propaga falha de I/O via callback opcional.
+ *   Chamadas internas (auto-refresh) continuam silenciosas.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { tr } from '../i18n';
 import { midiManager, type DisconnectReason } from '../services/midiService';
@@ -16,8 +27,8 @@ export function useMidiDevices(notify: Notify) {
   const [bleServerActive, setBleServerActive] = useState(false);
   const [scanningBle, setScanningBle] = useState(false);
 
-  const refresh = useCallback(async () => {
-    const list = await midiManager.getAvailableDestinations();
+  const refresh = useCallback(async (onError?: (error: unknown) => void) => {
+    const list = await midiManager.getAvailableDestinations(onError);
     setDestinations(list);
     setConnected(midiManager.getConnectedDestinations());
     setBleServerActive(midiManager.getBleServerActive());
@@ -71,8 +82,6 @@ export function useMidiDevices(notify: Notify) {
       const isConnected = midiManager.getConnectedDestinations().some((d) => d.id === dest.id);
 
       if (isConnected) {
-        // Defensivo: na implementação atual, disconnectOutput nunca rejeita.
-        // Mantido para não virar unhandled rejection se o manager mudar.
         try {
           await midiManager.disconnectOutput(dest.id);
           notify(tr('Desconectado: {name}', { name: dest.displayName }), 'info', 2500);
@@ -80,7 +89,6 @@ export function useMidiDevices(notify: Notify) {
           notify(tr('Erro ao desconectar: {message}', { message: errorMessage(error, tr('Erro desconhecido')) }), 'error', 4000);
         }
       } else {
-        // Este SIM pode rejeitar (BLE connectOutput, device sem portas úteis).
         try {
           await midiManager.connectOutput(dest);
           notify(tr('Conectado a: {name}', { name: dest.displayName }), 'success', 2500);
@@ -92,7 +100,7 @@ export function useMidiDevices(notify: Notify) {
       try {
         await refresh();
       } catch {
-        // refresh() nunca rejeita na implementação atual. Silencioso por design.
+        // Silencioso: a ação principal (conectar/desconectar) já deu feedback.
       }
     },
     [notify, refresh],
@@ -111,7 +119,7 @@ export function useMidiDevices(notify: Notify) {
       try {
         await refresh();
       } catch {
-        // idem
+        // Silencioso, mesmo motivo.
       }
     }
   }, [notify, refresh]);
