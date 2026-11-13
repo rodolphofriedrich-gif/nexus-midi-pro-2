@@ -1,14 +1,3 @@
-/**
- * MidiKeyboard — teclado virtual (2 oitavas, pitch bend, mod wheel, zoom).
- *
- * 🔗 Relacionamentos:
- * - Renderizado por: `App.tsx` (aba Play > Teclado).
- * - Expõe: `MidiKeyboardHandle` (openChannelPopup/openSettingsPopup),
- *   acionado pelo `AppHeader` do App via `ref` (`keyboardRef.current?.open…`).
- * - Dispara: `onNoteOn`/`onNoteOff` → `useAppHandlers.handleNoteOn/handleNoteOff`.
- * - Dispara: `onPitchBend`/`onModWheel` → `midiManager.sendPitchBend/sendControlChange`.
- * - Consome: `useVuMeter` via `VuMeterLive` não — o nível é externo.
- */
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Activity, X, Maximize, MoveHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { tr } from '../i18n';
@@ -235,15 +224,58 @@ export const MidiKeyboard = forwardRef<MidiKeyboardHandle, MidiKeyboardProps>(({
       if (note !== undefined) releaseNote(note, e.pointerId);
     };
 
+    const handleVisibility = () => {
+      if (document.hidden) releaseAllNotes();
+    };
+
     window.addEventListener('blur', releaseAllNotes);
+    window.addEventListener('pagehide', releaseAllNotes);
     window.addEventListener('pointerup', handleGlobalPointerUp);
     window.addEventListener('pointercancel', handleGlobalPointerUp);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       window.removeEventListener('blur', releaseAllNotes);
+      window.removeEventListener('pagehide', releaseAllNotes);
       window.removeEventListener('pointerup', handleGlobalPointerUp);
       window.removeEventListener('pointercancel', handleGlobalPointerUp);
+      document.removeEventListener('visibilitychange', handleVisibility);
       releaseAllNotes();
+    };
+  }, []);
+
+  // Watchdog: se houver notas ativas mas nenhuma atividade de pointer por
+  // mais de 20s, força liberação. Cobre o caso de a WebView engolir o
+  // pointerup/pointercancel em algum estado anômalo (bug documentado em
+  // alguns WebViews Android com pointer events + touch-action:none).
+  useEffect(() => {
+    const STUCK_TIMEOUT_MS = 20_000;
+    let lastActivity = Date.now();
+
+    const bumpActivity = () => { lastActivity = Date.now(); };
+    window.addEventListener('pointerdown', bumpActivity, true);
+    window.addEventListener('pointermove', bumpActivity, true);
+    window.addEventListener('pointerup', bumpActivity, true);
+    window.addEventListener('pointercancel', bumpActivity, true);
+
+    const interval = setInterval(() => {
+      if (activeNotesRef.current.size === 0) return;
+      if (Date.now() - lastActivity < STUCK_TIMEOUT_MS) return;
+      // Estado anômalo: notas ativas sem atividade há 20s → força parada.
+      const notes = Array.from(activeNotesRef.current);
+      activeNotesRef.current.clear();
+      activePointersRef.current.clear();
+      setPressedNotes(new Set());
+      for (const note of notes) void onNoteOffRef.current(note);
+      lastActivity = Date.now();
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('pointerdown', bumpActivity, true);
+      window.removeEventListener('pointermove', bumpActivity, true);
+      window.removeEventListener('pointerup', bumpActivity, true);
+      window.removeEventListener('pointercancel', bumpActivity, true);
+      clearInterval(interval);
     };
   }, []);
 
