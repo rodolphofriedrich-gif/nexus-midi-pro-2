@@ -125,6 +125,13 @@ Também é possível executar `npm run android:debug` na raiz do projeto.
 
 O workflow em `.github/workflows/build.yml` executa verificação de tipos, lint, testes e build Web em Pull Requests e nos pushes configurados. O job Android não é executado em Pull Requests; ele compila o APK de depuração nos pushes para as branches configuradas.
 
+Para gerar um APK de teste desta branch enquanto o Pull Request está em revisão:
+
+1. Abra [GitHub Actions](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/actions/workflows/build.yml).
+2. Selecione o workflow **CI & Build APK - NexusMIDI Pro**.
+3. Clique em **Run workflow** e escolha a branch `fix/sf2-restore-and-storage`.
+4. Após a conclusão, abra a execução e baixe o artefato `NexusMIDI-Pro-debug-apk`.
+
 Para publicar um Release Android assinado, o mantenedor precisa configurar no GitHub Actions os seguintes *Secrets*:
 
 - `ANDROID_KEYSTORE_BASE64`
@@ -296,6 +303,13 @@ You can also run `npm run android:debug` from the project root.
 ## Continuous integration and releases
 
 The workflow at `.github/workflows/build.yml` runs type checking, linting, tests, and the Web build on Pull Requests and configured pushes. The Android job does not run on Pull Requests; it builds a debug APK on pushes to the configured branches.
+
+To build a test APK from this branch while the Pull Request is under review:
+
+1. Open [GitHub Actions](https://github.com/rodolphofriedrich-gif/nexus-midi-pro-2/actions/workflows/build.yml).
+2. Select the **CI & Build APK - NexusMIDI Pro** workflow.
+3. Click **Run workflow** and select the `fix/sf2-restore-and-storage` branch.
+4. When the run completes, open it and download the `NexusMIDI-Pro-debug-apk` artifact.
 
 To publish a signed Android Release, the maintainer must configure these GitHub Actions *Secrets*:
 
