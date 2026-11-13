@@ -368,5 +368,7 @@ export const en: Record<string, string> = {
   "{count} eventos": "{count} events",
   "{count} notas ativas": "{count} active notes",
   "{label}: {value} • Canal {channel}": "{label}: {value} • Channel {channel}",
-  "Órgão": "Organ"
+  "Órgão": "Organ",
+  "Código original licenciado sob MIT. Bibliotecas de terceiros mantêm suas próprias licenças.": "Original code licensed under MIT. Third-party libraries retain their own licenses.",
+  "Ver licenças e créditos": "View licenses and acknowledgments"
 };
