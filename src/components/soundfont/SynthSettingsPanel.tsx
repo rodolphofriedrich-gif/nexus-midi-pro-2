@@ -1,3 +1,14 @@
+/**
+ * SynthSettingsPanel — painel de configurações do sintetizador (efeitos, timbre, sistema).
+ *
+ * 🔗 Relacionamentos:
+ * - Renderizado por: `SoundFontScreen.tsx` (dentro de um `<Popup>`).
+ * - Edita: `SynthSettings` — superset de `ChannelSettings` + campos globais.
+ *   O caller (`SoundFontScreen`) decide se cada chave é por canal (`channelSettingsStore`)
+ *   ou global (`synthSettingsStore`) via `isChannelSettingKey`.
+ * - Consome: `StudioSlider` (memo).
+ * - `vibrato` foi renomeado para `modWheel` na unificação mixer↔synth (mesmo CC1).
+ */
 import { useEffect, useRef, useState } from 'react';
 import { RotateCcw, Settings2, Volume2, Zap, ChevronDown } from 'lucide-react';
 import { tr } from '../../i18n';
@@ -46,7 +57,6 @@ export function SynthSettingsPanel({
   const tabClass = (id: TabId, active: string) =>
     `flex h-7 items-center gap-1.5 rounded-md px-3 text-[10px] font-bold transition-colors ${activeTab === id ? active : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`;
   
-  // AQUI: Mudança para var(--nexus-primary)
   const sectionTitle = 'mb-3 border-b border-[var(--border-color)] pb-1 text-xs font-bold text-[var(--nexus-primary)]';
   const globalNote = <p className="-mt-2 mb-2 text-[10px] text-[var(--text-muted)]">{tr('Global: vale para todos os canais')}</p>;
 
@@ -137,7 +147,7 @@ export function SynthSettingsPanel({
               <h3 className={sectionTitle}>{tr('Filtro & Modulação')}</h3>
               <StudioSlider label={tr('Cutoff (Corte)')} value={settings.cutoff} min={0} max={127} onChange={set('cutoff')} />
               <StudioSlider label={tr('Resonance (Ressonância)')} value={settings.resonance} min={0} max={127} onChange={set('resonance')} />
-              <StudioSlider label={tr('Vibrato (Profundidade)')} value={settings.vibrato} min={0} max={127} onChange={set('vibrato')} />
+              <StudioSlider label={tr('Mod Wheel (CC1 / Vibrato)')} value={settings.modWheel} min={0} max={127} onChange={set('modWheel')} />
             </div>
           </div>
         )}
