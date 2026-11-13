@@ -88,7 +88,7 @@ export const en: Record<string, string> = {
   "Conecte um destino MIDI ou carregue um SoundFont.": "Connect a MIDI destination or load a SoundFont.",
   "Conecte um dispositivo USB/BLE no topo.": "Connect a USB/BLE device at the top.",
   "Configurações": "Settings",
-  "Configurações do canal {ch} restauradas.": "Channel {ch} settings restored.",
+  "Configurações restauradas.": "Settings restored.",
   "Configurações do teclado": "Keyboard settings",
   "Continuar": "Resume",
   "Controles redefinidos localmente.": "Controls reset locally.",
