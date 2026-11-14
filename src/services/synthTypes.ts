@@ -43,7 +43,7 @@ export interface FxControls {
 export interface SynthDiagnostics {
   voiceCount: number | null;
   voiceCap: number | null;
-  interpolationType: string | null;
+  interpolationType: string | number | null;
   effectsEnabled: boolean | null;
   eventsEnabled: boolean | null;
 }
