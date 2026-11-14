@@ -30,8 +30,9 @@ interface SpessaSynthLike {
     eventsEnabled?: boolean;
   };
   eventHandler?: {
-    addEvent(event: string, id: string, callback: (data: any) => unknown): void;
-    removeEvent(event: string, id: string): void;
+    addEvent(event: 'noteOn', id: string, callback: (data: { channel: number; midiNote: number }) => unknown): void;
+    addEvent(event: 'controllerChange', id: string, callback: (data: { channel: number; controller: number; value: number }) => unknown): void;
+    removeEvent(event: 'noteOn' | 'controllerChange', id: string): void;
   };
   soundBankManager: {
     addSoundBank(buffer: ArrayBuffer, id: string, bankOffset?: number): unknown;
