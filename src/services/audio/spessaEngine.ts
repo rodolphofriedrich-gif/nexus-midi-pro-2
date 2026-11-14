@@ -64,8 +64,9 @@ class SpessaEngine implements SynthEngine {
   }
 
   getDiagnostics() {
+    const voiceCount = this.synth.voiceCount;
     return {
-      voiceCount: Number.isFinite(this.synth.voiceCount) ? this.synth.voiceCount : null,
+      voiceCount: typeof voiceCount === 'number' && Number.isFinite(voiceCount) ? voiceCount : null,
       voiceCap: this.synth.systemParameters?.voiceCap ?? null,
       interpolationType: this.synth.systemParameters?.interpolationType ?? null,
       effectsEnabled: this.synth.systemParameters?.effectsEnabled ?? null,
