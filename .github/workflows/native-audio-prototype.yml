@@ -33,10 +33,13 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Setup Android SDK, NDK and CMake
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: ndk;27.2.12479018,cmake;3.22.1
+
+      - name: Install Android NDK and CMake
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "ndk;27.2.12479018" "cmake;3.22.1"
 
       - name: Install JavaScript dependencies
         run: npm ci
