@@ -1,8 +1,17 @@
+import { Capacitor } from '@capacitor/core';
 import { WorkletSynthesizer } from 'spessasynth_lib';
 import workletUrl from 'spessasynth_lib/dist/spessasynth_processor.min.js?url';
 import type { SynthBackend, SynthEngine } from '../synthTypes';
 import { FxChain } from './fxChain';
-import { markLatencyStage, markProcessorNoteOn, recordSynthControllerEvent, registerPendingProcessorNote, type AudioContextDiagnostics } from '../latencyDiagnostics';
+import {
+  isLatencyCaptureEnabled,
+  markLatencyStage,
+  markProcessorNoteOn,
+  recordSynthControllerEvent,
+  registerPendingProcessorNote,
+  subscribeLatencyCapture,
+  type AudioContextDiagnostics,
+} from '../latencyDiagnostics';
 
 /**
  * Superfície do WorkletSynthesizer que o app usa. Declarada aqui para que mudanças de tipagem
@@ -25,10 +34,11 @@ interface SpessaSynthLike {
   voiceCount?: number;
   systemParameters?: {
     voiceCap?: number;
-    interpolationType?: string;
+    interpolationType?: string | number;
     effectsEnabled?: boolean;
     eventsEnabled?: boolean;
   };
+  setSystemParameter?(parameter: 'eventsEnabled' | 'interpolationType', value: boolean | number): void;
   eventHandler?: {
     addEvent(event: 'noteOn', id: string, callback: (data: { channel: number; midiNote: number }) => unknown): void;
     addEvent(event: 'controllerChange', id: string, callback: (data: { channel: number; controller: number; value: number }) => unknown): void;
@@ -51,16 +61,38 @@ class SpessaEngine implements SynthEngine {
   private readonly noteOnEventId = 'nexus-latency-note-on';
   private readonly controllerEventId = 'nexus-latency-cc1';
 
+  private detachDiagnosticEvents: (() => void) | null = null;
+  private readonly unsubscribeLatencyCapture: () => void;
+
   constructor(private readonly synth: SpessaSynthLike) {
-    // O callback é enviado pelo processador AudioWorklet após receber o Note On.
-    // Ele mede a confirmação assíncrona até o thread principal, não a saída física.
-    this.synth.eventHandler?.addEvent('noteOn', this.noteOnEventId, (event: { channel: number; midiNote: number }) => {
-      markProcessorNoteOn(event.channel + 1, event.midiNote);
-    });
-    // Captura CC1 efetivamente processado pelo sintetizador para investigar modulação involuntária.
-    this.synth.eventHandler?.addEvent('controllerChange', this.controllerEventId, (event: { channel: number; controller: number; value: number }) => {
-      recordSynthControllerEvent(event.channel + 1, event.controller, event.value);
-    });
+    // Eventos do processador só são necessários durante uma captura explícita.
+    // Desligá-los no uso normal evita mensagens de diagnóstico a cada nota/CC.
+    this.synth.setSystemParameter?.('eventsEnabled', false);
+    this.syncDiagnosticEvents(isLatencyCaptureEnabled());
+    this.unsubscribeLatencyCapture = subscribeLatencyCapture((enabled) => this.syncDiagnosticEvents(enabled));
+  }
+
+  private syncDiagnosticEvents(enabled: boolean): void {
+    if (enabled) {
+      if (this.detachDiagnosticEvents) return;
+      this.synth.setSystemParameter?.('eventsEnabled', true);
+      // O callback noteOn confirma a recepção pelo processador; não mede a saída acústica.
+      this.synth.eventHandler?.addEvent('noteOn', this.noteOnEventId, (event: { channel: number; midiNote: number }) => {
+        markProcessorNoteOn(event.channel + 1, event.midiNote);
+      });
+      this.synth.eventHandler?.addEvent('controllerChange', this.controllerEventId, (event: { channel: number; controller: number; value: number }) => {
+        recordSynthControllerEvent(event.channel + 1, event.controller, event.value);
+      });
+      this.detachDiagnosticEvents = () => {
+        this.synth.eventHandler?.removeEvent('noteOn', this.noteOnEventId);
+        this.synth.eventHandler?.removeEvent('controllerChange', this.controllerEventId);
+        this.detachDiagnosticEvents = null;
+      };
+      return;
+    }
+
+    this.detachDiagnosticEvents?.();
+    this.synth.setSystemParameter?.('eventsEnabled', false);
   }
 
   getDiagnostics() {
@@ -142,8 +174,9 @@ class SpessaEngine implements SynthEngine {
   }
 
   dispose(): void {
-    this.synth.eventHandler?.removeEvent('noteOn', this.noteOnEventId);
-    this.synth.eventHandler?.removeEvent('controllerChange', this.controllerEventId);
+    this.unsubscribeLatencyCapture();
+    this.detachDiagnosticEvents?.();
+    this.synth.setSystemParameter?.('eventsEnabled', false);
     try {
       this.synth.destroy?.();
     } catch {
@@ -181,6 +214,13 @@ export async function createWebAudioBackend(): Promise<SynthBackend> {
 
   const synth = new WorkletSynthesizer(ctx) as unknown as SpessaSynthLike;
   if (synth.isReady) await synth.isReady;
+
+  // Perfil Android: interpolação linear reduz o custo de CPU em tempo real.
+  // Na Web mantemos Hermite (padrão) para priorizar a qualidade sonora.
+  // O valor 0 é documentado pelo SpessaSynth como rápido/qualidade média.
+  if (Capacitor.getPlatform() === 'android') {
+    synth.setSystemParameter?.('interpolationType', 0);
+  }
 
   const fx = new FxChain(ctx, ctx.destination);
   synth.connect(fx.input);
