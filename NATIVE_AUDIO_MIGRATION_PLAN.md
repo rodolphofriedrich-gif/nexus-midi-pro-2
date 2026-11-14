@@ -14,8 +14,8 @@ Esta escolha não declara o JUCE inadequado. Ele poderá ser reavaliado se o pro
 
 ## Componentes escolhidos
 
-- **FluidSynth:** leitura dos arquivos SF2 e síntese das vozes.
-- **Oboe:** abertura e gerenciamento do stream de áudio Android, com AAudio quando disponível e fallback conforme suporte do dispositivo.
+- **FluidSynth 2.6.2 (upstream oficial):** leitura dos arquivos SF2, síntese das vozes e driver Android Oboe integrado em `src/drivers/fluid_oboe.cpp`.
+- **Oboe:** biblioteca de I/O usada pelo driver Oboe do próprio FluidSynth, com AAudio quando disponível e fallback conforme suporte do dispositivo.
 - **C++ / Android NDK / CMake:** implementação e compilação do backend.
 - **Capacitor Plugin + JNI:** comandos de controle e ciclo de vida entre TypeScript, Java e C++.
 - **SpessaSynth + Web Audio:** permanece como backend Web e fallback Android até a migração ser validada.
@@ -78,14 +78,16 @@ O carregamento e descarregamento de SF2 ocorrerá fora do callback. A comunicaç
 - Trabalhar em branch experimental separada.
 
 ### Fase 1 — Build nativo mínimo
-- Definir versões fixas de NDK, CMake, Oboe e FluidSynth.
+- Fixar FluidSynth 2.6.2, Oboe 1.11.0 e versões NDK/CMake compatíveis.
+- Ativar o driver oficial com `enable-oboe=ON` e fornecer o pacote CMake Oboe por Prefab/Gradle.
 - Adicionar um módulo CMake Android isolado.
 - Compilar primeiro para `arm64-v8a`, arquitetura do Galaxy A54.
 - Integrar o artefato nativo no APK sem ativar o novo motor.
 - CI precisa compilar o APK com as bibliotecas nativas.
 - Não alterar o comportamento do app nesta fase.
 
-### Fase 2 — Saída Oboe e prova de vida
+### Fase 2 — Driver FluidSynth/Oboe e prova de vida
+- Inicializar `new_fluid_audio_driver()` usando o driver Oboe do FluidSynth upstream.
 - Abrir/fechar o stream Oboe com tratamento de erros e ciclo de vida.
 - Expor diagnósticos reais: API, sample rate, frames-per-burst, tamanho/capacidade do buffer, modo efetivo e contagem de underruns/XRuns.
 - Validar callback estável antes de conectar o sintetizador.
