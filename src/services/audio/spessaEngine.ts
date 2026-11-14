@@ -150,6 +150,7 @@ export async function createWebAudioBackend(): Promise<SynthBackend> {
   return {
     engine,
     fx,
+    setFxBypass: (enabled: boolean) => fx.setBypass(enabled),
     resume: async () => {
       if (ctx.state !== 'running') await ctx.resume().catch(() => undefined);
     },
