@@ -36,6 +36,7 @@ import { ExitDialog } from './components/ExitDialog';
 import { MidiKeyboard, MidiKeyboardHandle } from './components/MidiKeyboard';
 import { MidiPadGrid } from './components/MidiPadGrid';
 import { MidiStatusBar } from './components/MidiStatusBar';
+import { AudioDiagnosticsPanel } from './components/AudioDiagnosticsPanel';
 import { StatusToast } from './components/StatusToast';
 import { VuMeterLive } from './components/VuMeterLive';
 import { useMidiDevices } from './hooks/useMidiDevices';
@@ -215,6 +216,7 @@ export default function App() {
 
         {showExit && <ExitDialog onCancel={() => setShowExit(false)} onConfirm={() => void handleConfirmExit()} />}
         <StatusToast toast={toast} onClose={dismiss} />
+        <AudioDiagnosticsPanel />
 
         {isPadChannelOpen && (
           <ChannelSelectPopup
