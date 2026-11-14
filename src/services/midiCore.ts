@@ -26,6 +26,7 @@ import { MidiConnectionManager, type DisconnectReason } from './midi/midiConnect
 import { bleServerDestination } from './midi/midiDestinations';
 import { BLE_SERVER_ID, VIRTUAL_ID } from './midi/midiConstants';
 import { withTimeout } from './midi/midiTimeout';
+import { audioDiagnostics } from './audio/audioDiagnostics';
 
 export { getNoteName };
 export type { MidiMessage };
@@ -369,14 +370,19 @@ export class MidiService {
 
   public routeMessage(status: number, data1: number, data2: number, sourceId?: string): void {
     const command = status & 0xf0;
+    const isVirtualNote = sourceId === VIRTUAL_ID && (command === 0x80 || command === 0x90);
+    if (isVirtualNote) audioDiagnostics.mark('midi.route.enter', { status, note: data1, velocity: data2 });
     const inputChannel = (status & 0x0f) + 1;
     const fromApp = sourceId === VIRTUAL_ID;
 
+    if (isVirtualNote) audioDiagnostics.mark('midi.monitor.begin');
     this.monitor.pushLog(status, data1, data2, sourceId, fromApp ? 'TX' : 'RX');
     if (command === 0x90 && data2 > 0) this.monitor.notifyActivity(data2);
     this.monitor.notifyTap({ status, data1, data2, sourceId });
+    if (isVirtualNote) audioDiagnostics.mark('midi.monitor.return');
 
     if (this.synth.getIsReady()) {
+      if (isVirtualNote) audioDiagnostics.mark('midi.synth.dispatch.begin');
       switch (command) {
         case 0x90:
           if (data2 > 0) this.synth.noteOn(data1, data2, inputChannel);
@@ -403,6 +409,7 @@ export class MidiService {
         default:
           break;
       }
+      if (isVirtualNote) audioDiagnostics.mark('midi.synth.dispatch.return');
     }
 
     if (fromApp && this.connections.getBleServerActive()) {
@@ -410,6 +417,7 @@ export class MidiService {
     }
 
     this.routing.dispatch(status, data1, data2, sourceId);
+    if (isVirtualNote) audioDiagnostics.mark('midi.route.return');
   }
 
   private encode(command: number, channel: number, data1: number, data2: number): number[] {
