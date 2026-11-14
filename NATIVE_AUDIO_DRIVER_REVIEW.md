@@ -10,3 +10,16 @@ Ordem de preferência para o protótipo:
 3. Não manter os dois drivers de saída ativos ao mesmo tempo.
 
 O exemplo de terceiros é apenas referência arquitetural. Não copiar seus binários nem presumir que estejam atualizados; revisar versão, ABI, dependências transitivas e licenças antes de reutilizar qualquer artefato.
+
+
+## Confirmação upstream (2026-11-14)
+
+A revisão do código-fonte oficial confirmou que FluidSynth **2.6.2** inclui `src/drivers/fluid_oboe.cpp`. O driver chama `fluid_synth_write_float` ou `fluid_synth_write_s16` no callback Oboe e expõe configurações `audio.oboe.performance-mode`, `audio.oboe.sharing-mode`, `audio.oboe.sample-rate-conversion-quality` e `audio.oboe.error-recovery-mode`.
+
+O CMake oficial declara a opção `enable-oboe` (desativada por padrão) e usa `find_package(oboe)`. Portanto, não precisamos criar um segundo callback Oboe próprio no primeiro protótipo: usaremos o driver upstream do FluidSynth, se o build Android confirmar `OBOE_SUPPORT`. Isso reduz código de áudio próprio e evita duplicar o ciclo de vida do stream.
+
+Fontes consultadas:
+- FluidSynth 2.6.2 CMakeLists: https://github.com/FluidSynth/fluidsynth/blob/master/CMakeLists.txt
+- Driver Oboe upstream: https://github.com/FluidSynth/fluidsynth/blob/master/src/drivers/fluid_oboe.cpp
+- Guia de build CMake: https://github.com/FluidSynth/fluidsynth/blob/master/doc/wiki/BuildingWithCMake.md
+- Oboe 1.11.0: https://github.com/google/oboe/releases/tag/1.11.0
