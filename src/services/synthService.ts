@@ -27,6 +27,7 @@
  */
 import { clampInt } from '../lib/midiMath';
 import type { BackendFactory, ChannelSettings, GlobalSettings, SynthBackend, SynthSettings } from './synthTypes';
+import { audioDiagnostics } from './audio/audioDiagnostics';
 
 export interface SynthSnapshot {
   ready: boolean;
@@ -209,6 +210,7 @@ export class SynthService {
   }
 
   noteOn(note: number, velocity: number, channel = 1): void {
+    audioDiagnostics.mark('synth.service.noteOn.enter', { channel, note, velocity });
     const engine = this.backend?.engine;
     if (!this.snapshot.ready || !engine) return;
     void this.backend?.resume();
@@ -237,9 +239,11 @@ export class SynthService {
     const sounding = clampInt(original + shift, 0, 127);
     this.active.set(key, sounding);
     engine.noteOn(ch, sounding, clampInt(velocity, 1, 127));
+    audioDiagnostics.mark('synth.service.noteOn.return', { channel: ch, note: sounding });
   }
 
   noteOff(note: number, channel = 1): void {
+    audioDiagnostics.mark('synth.service.noteOff.enter', { channel, note });
     const engine = this.backend?.engine;
     if (!this.snapshot.ready || !engine) return;
     const ch = this.index(channel);
@@ -249,6 +253,7 @@ export class SynthService {
     const sounding = this.active.get(key) ?? original;
     this.active.delete(key);
     engine.noteOff(ch, sounding);
+    audioDiagnostics.mark('synth.service.noteOff.return', { channel: ch, note: sounding });
   }
 
   allNotesOff(): void {
