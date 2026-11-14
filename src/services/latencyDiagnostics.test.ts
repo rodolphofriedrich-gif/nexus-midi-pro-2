@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearLatencyTraceEvents,
   getLatencyTraceEvents,
+  markLatencyStage,
   setLatencyCaptureEnabled,
   withLatencyTrace,
 } from './latencyDiagnostics';
@@ -16,7 +17,6 @@ describe('latencyDiagnostics', () => {
     setLatencyCaptureEnabled(true);
     withLatencyTrace('keyboard', 60, 1, () => {
       // Simula as chamadas síncronas atravessando o pipeline.
-      const { markLatencyStage } = requireStages();
       markLatencyStage('performance.noteOn', 1);
       markLatencyStage('midi.routeMessage', 1);
       markLatencyStage('spessa.worklet.noteOn.call', 1);
@@ -39,12 +39,3 @@ describe('latencyDiagnostics', () => {
     expect(getLatencyTraceEvents()).toEqual([]);
   });
 });
-
-function requireStages() {
-  // Static import helper avoids changing the capture API in the test.
-  return { markLatencyStage: (stage: string, channel?: number) => {
-    // Dynamic import is intentionally not used: test records the same public marker.
-    void stage;
-    void channel;
-  } };
-}
