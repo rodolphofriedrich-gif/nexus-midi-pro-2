@@ -4,6 +4,7 @@ import {
   getLatencyTraceEvents,
   markLatencyStage,
   setLatencyCaptureEnabled,
+  subscribeLatencyCapture,
   withLatencyTrace,
 } from './latencyDiagnostics';
 
@@ -32,6 +33,17 @@ describe('latencyDiagnostics', () => {
     ]);
     expect(events.every((event) => event.source === 'keyboard' && event.note === 60)).toBe(true);
     expect(events.every((event) => event.elapsedMs >= 0)).toBe(true);
+  });
+
+  it('notifies subscribers only when capture state changes', () => {
+    const changes: boolean[] = [];
+    const unsubscribe = subscribeLatencyCapture((enabled) => changes.push(enabled));
+    setLatencyCaptureEnabled(true);
+    setLatencyCaptureEnabled(true);
+    setLatencyCaptureEnabled(false);
+    unsubscribe();
+    setLatencyCaptureEnabled(true);
+    expect(changes).toEqual([true, false]);
   });
 
   it('does not record when capture is disabled', () => {
