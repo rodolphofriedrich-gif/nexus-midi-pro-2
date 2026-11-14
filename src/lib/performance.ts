@@ -1,6 +1,7 @@
 import { Arpeggiator } from './arpeggiator';
 import { applyVelocityCurve, type VelocityCurve } from './velocity';
 import { buildChord, quantizeToScale, type ChordId, type ScaleId } from './scales';
+import { audioDiagnostics } from '../services/audio/audioDiagnostics';
 
 const DRUM_CHANNEL = 10;
 
@@ -38,6 +39,7 @@ export class PerformanceEngine {
    *                 Se omitido, cai no comportamento antigo (chave = canal:nota).
    */
   noteOn(channel: number, note: number, baseVelocity: number, sourceId?: string): void {
+    audioDiagnostics.mark('performance.noteOn.enter', { channel, note, sourceId });
     const s = this.deps.getSettings();
     const velocity = applyVelocityCurve(baseVelocity, s.velocityCurve, s.fixedVelocity);
     const key = this.makeKey(channel, note, sourceId);
@@ -55,7 +57,11 @@ export class PerformanceEngine {
       for (const n of notes) this.deps.arp.hold(n, velocity);
       return;
     }
-    for (const n of notes) this.deps.send(channel, n, velocity, true);
+    for (const n of notes) {
+      audioDiagnostics.mark('performance.send.noteOn', { channel, note: n, velocity });
+      this.deps.send(channel, n, velocity, true);
+    }
+    audioDiagnostics.mark('performance.noteOn.return', { channel, note, sourceId });
   }
 
   /**
@@ -65,6 +71,7 @@ export class PerformanceEngine {
    *   3. Fallback (qualquer source, qualquer canal): proteção contra nota presa.
    */
   noteOff(channel: number, note: number, sourceId?: string): void {
+    audioDiagnostics.mark('performance.noteOff.enter', { channel, note, sourceId });
     const exactKey = this.makeKey(channel, note, sourceId);
     if (this.sounding.has(exactKey)) {
       this.releaseKey(exactKey);
@@ -110,6 +117,9 @@ export class PerformanceEngine {
       for (const n of entry.notes) this.deps.arp.release(n);
       return;
     }
-    for (const n of entry.notes) this.deps.send(entry.channel, n, 0, false);
+    for (const n of entry.notes) {
+      audioDiagnostics.mark('performance.send.noteOff', { channel: entry.channel, note: n });
+      this.deps.send(entry.channel, n, 0, false);
+    }
   }
 }
