@@ -15,10 +15,11 @@ export class FxChain implements FxControls {
   private readonly eqHigh: BiquadFilterNode;
   private readonly compressor: DynamicsCompressorNode;
   private readonly master: GainNode;
+  private bypassed = false;
 
   constructor(
     private readonly ctx: BaseAudioContext,
-    destination: AudioNode,
+    private readonly destination: AudioNode,
   ) {
     this.input = ctx.createGain();
     this.dryGain = ctx.createGain();
@@ -57,6 +58,19 @@ export class FxChain implements FxControls {
     this.eqHigh.connect(this.compressor);
     this.compressor.connect(this.master);
     this.master.connect(destination);
+  }
+
+  /** Desvia temporariamente a cadeia master para testes A/B de latência. */
+  setBypass(enabled: boolean): void {
+    if (enabled === this.bypassed) return;
+    if (enabled) {
+      this.master.disconnect(this.destination);
+      this.input.connect(this.destination);
+    } else {
+      this.input.disconnect(this.destination);
+      this.master.connect(this.destination);
+    }
+    this.bypassed = enabled;
   }
 
   setDelay(timeMs: number, feedbackPercent: number, mixPercent: number): void {
