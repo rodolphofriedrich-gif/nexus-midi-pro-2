@@ -27,7 +27,7 @@
  */
 import { clampInt } from '../lib/midiMath';
 import { markLatencyStage, type AudioContextDiagnostics } from './latencyDiagnostics';
-import type { BackendFactory, ChannelSettings, GlobalSettings, SynthBackend, SynthSettings } from './synthTypes';
+import type { BackendFactory, ChannelSettings, GlobalSettings, SynthBackend, SynthDiagnostics, SynthSettings } from './synthTypes';
 
 export interface SynthSnapshot {
   ready: boolean;
@@ -119,6 +119,11 @@ export class SynthService {
   /** Métricas somente de leitura do AudioContext ativo. */
   getAudioDiagnostics(): AudioContextDiagnostics | null {
     return this.backend?.getAudioDiagnostics?.() ?? null;
+  }
+
+  /** Métricas de carga e configuração internas do SpessaSynth. */
+  getSynthDiagnostics(): SynthDiagnostics | null {
+    return this.backend?.getSynthDiagnostics?.() ?? null;
   }
 
   /** Estado do bypass de efeitos master usado no teste A/B de latência. */
