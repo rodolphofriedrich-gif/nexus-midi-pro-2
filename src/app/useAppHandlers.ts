@@ -17,6 +17,7 @@ import { midiManager, VIRTUAL_ID } from '../services/midiService';
 import { NativeMidi } from '../services/nativeMidi';
 import { performanceEngine } from '../services/performanceService';
 import { prefsStore, type Prefs } from '../services/stores';
+import { withLatencyTrace } from '../services/latencyDiagnostics';
 import type { ToastType } from '../hooks/useToast';
 
 type Notify = (text: string, type?: ToastType, durationMs?: number) => void;
@@ -41,13 +42,15 @@ export function useAppHandlers({
 }: UseAppHandlersArgs) {
   const handleNoteOn = useCallback(
     (note: number, channel: number, velocity?: number, sourceId?: string) =>
-      performanceEngine.noteOn(channel, note, velocity ?? prefsStore.get().velocity, sourceId),
+      withLatencyTrace(sourceId ?? 'unknown', note, channel, () =>
+        performanceEngine.noteOn(channel, note, velocity ?? prefsStore.get().velocity, sourceId),
+      ),
     [],
   );
 
   const handleNoteOff = useCallback(
     (note: number, channel: number, sourceId?: string) =>
-      performanceEngine.noteOff(channel, note, sourceId),
+      withLatencyTrace(sourceId ?? 'unknown', note, channel, () => performanceEngine.noteOff(channel, note, sourceId)),
     [],
   );
 
