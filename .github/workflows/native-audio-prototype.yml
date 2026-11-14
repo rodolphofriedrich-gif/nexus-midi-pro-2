@@ -36,9 +36,7 @@ jobs:
       - name: Setup Android SDK, NDK and CMake
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            ndk;27.2.12479018
-            cmake;3.22.1
+          packages: ndk;27.2.12479018,cmake;3.22.1
 
       - name: Install JavaScript dependencies
         run: npm ci
