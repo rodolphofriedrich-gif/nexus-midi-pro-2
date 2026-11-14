@@ -1,7 +1,9 @@
-import { useMemo, useRef, useSyncExternalStore } from 'react';
+import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { tr } from '../i18n';
 import { midiManager } from '../services/midiService';
 import type { MidiLogEntry } from '../types/midi';
+import { clearLatencyTraceEvents, getLatencyCaptureStatus, getLatencyTraceEvents, setLatencyCaptureEnabled } from '../services/latencyDiagnostics';
+import { synthService } from '../services/synthService';
 
 const TYPE_COLORS: Partial<Record<MidiLogEntry['type'], string>> = {
   'Note On': 'text-[var(--nexus-accent)]',
@@ -51,12 +53,15 @@ function commitAndNotify(): void {
 
 function subscribeThrottled(cb: () => void): () => void {
   pendingNotify = cb;
-  // Inicializa o cache na primeira montagem, lendo o log atual (pode ter
-  // mensagens acumuladas antes do Monitor abrir — não queremos perder).
-  if (committedLog === null) committedLog = midiManager.getLog();
+  // A tela é desmontada ao sair da aba MIDI. Sincroniza sempre o cache na
+  // remontagem para incluir mensagens recebidas enquanto o Monitor estava fechado.
+  const latestLog = midiManager.getLog();
+  const snapshotChanged = committedLog !== latestLog;
+  committedLog = latestLog;
   const unsubscribe = midiManager.subscribeLog(() => {
     if (rafId === null) rafId = requestAnimationFrame(commitAndNotify);
   });
+  if (snapshotChanged) cb();
   return () => {
     unsubscribe();
     if (rafId !== null) {
@@ -75,6 +80,47 @@ function getSnapshotThrottled(): readonly MidiLogEntry[] {
 
 export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
   const log = useSyncExternalStore(subscribeThrottled, getSnapshotThrottled, getSnapshotThrottled);
+  const [captureEnabled, setCaptureEnabled] = useState(getLatencyCaptureStatus());
+  const [diagnosticSnapshot, setDiagnosticSnapshot] = useState(() => ({
+    events: getLatencyTraceEvents(),
+    audio: synthService.getAudioDiagnostics(),
+  }));
+  const [copyStatus, setCopyStatus] = useState('');
+
+  const refreshDiagnostics = () => {
+    setDiagnosticSnapshot({
+      events: getLatencyTraceEvents(),
+      audio: synthService.getAudioDiagnostics(),
+    });
+  };
+
+  const toggleCapture = () => {
+    const next = !captureEnabled;
+    setLatencyCaptureEnabled(next);
+    setCaptureEnabled(next);
+    refreshDiagnostics();
+  };
+
+  const copyDiagnostics = async () => {
+    const logEntries = midiManager.getLog();
+    const report = {
+      capturedAt: new Date().toISOString(),
+      audio: synthService.getAudioDiagnostics(),
+      events: getLatencyTraceEvents(),
+      monitor: {
+        totalEntries: logEntries.length,
+        txEntries: logEntries.filter((entry) => entry.direction === 'TX').length,
+        rxEntries: logEntries.filter((entry) => entry.direction === 'RX').length,
+        latest: logEntries[0] ?? null,
+      },
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+      setCopyStatus('Relatório copiado.');
+    } catch {
+      setCopyStatus('Não foi possível copiar. Atualize e envie uma captura desta tela.');
+    }
+  };
 
   // Captura o log no momento em que `paused` vira true, para congelar a UI.
   // Usa useRef (não useMemo) porque a dep `log` mudaria a cada frame e
@@ -95,6 +141,49 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] text-[var(--text-main)]">
+      <section className="shrink-0 border-b border-[var(--border-color)] bg-[var(--bg-panel)] p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--nexus-primary)]">Diagnóstico de latência</p>
+            <p className="text-[11px] text-[var(--text-muted)]">Captura temporária do caminho toque → MIDI → SpessaSynth</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={toggleCapture} className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-bold text-[var(--text-main)]">
+              {captureEnabled ? 'Parar captura' : 'Iniciar captura'}
+            </button>
+            <button type="button" onClick={refreshDiagnostics} className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-semibold text-[var(--text-main)]">Atualizar</button>
+            <button type="button" onClick={() => { clearLatencyTraceEvents(); refreshDiagnostics(); }} className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-semibold text-[var(--text-main)]">Limpar</button>
+            <button type="button" onClick={() => void copyDiagnostics()} className="rounded-lg border border-[var(--nexus-primary)] px-3 py-2 text-xs font-bold text-[var(--nexus-primary)]">Copiar relatório</button>
+          </div>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] text-[var(--text-muted)]">
+          <span>Captura: {captureEnabled ? 'ATIVA' : 'parada'}</span>
+          <span>Eventos: {diagnosticSnapshot.events.length}</span>
+          <span>AudioContext: {diagnosticSnapshot.audio?.state ?? 'indisponível'}</span>
+          <span>Sample rate: {diagnosticSnapshot.audio?.sampleRate ?? '—'} Hz</span>
+          <span>Base: {diagnosticSnapshot.audio?.baseLatencyMs ?? '—'} ms</span>
+          <span>Saída: {diagnosticSnapshot.audio?.outputLatencyMs ?? '—'} ms</span>
+        </div>
+        {copyStatus && <p className="mt-1 text-[11px] text-[var(--nexus-accent)]">{copyStatus}</p>}
+        {diagnosticSnapshot.events.length > 0 && (
+          <div className="mt-2 max-h-28 overflow-y-auto rounded-lg border border-[var(--border-color)]">
+            <table className="w-full text-left font-mono text-[10px]">
+              <thead className="sticky top-0 bg-[var(--bg-app)] text-[var(--text-muted)]">
+                <tr><th className="px-2 py-1">ID / origem</th><th className="px-2 py-1">Etapa</th><th className="px-2 py-1">Desde início</th></tr>
+              </thead>
+              <tbody>
+                {diagnosticSnapshot.events.slice(-12).reverse().map((event, index) => (
+                  <tr key={event.id + '-' + event.stage + '-' + index} className="border-t border-[var(--border-color)]">
+                    <td className="px-2 py-1">{event.id} · {event.source} · {event.note}</td>
+                    <td className="px-2 py-1">{event.stage}</td>
+                    <td className="px-2 py-1">{event.elapsedMs.toFixed(3)} ms</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
         {visible.length === 0 ? (
           <div className="flex h-full items-center justify-center p-8 text-center text-xs text-[var(--text-muted)]">

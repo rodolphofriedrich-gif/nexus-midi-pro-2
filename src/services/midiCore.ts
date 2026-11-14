@@ -26,6 +26,7 @@ import { MidiConnectionManager, type DisconnectReason } from './midi/midiConnect
 import { bleServerDestination } from './midi/midiDestinations';
 import { BLE_SERVER_ID, VIRTUAL_ID } from './midi/midiConstants';
 import { withTimeout } from './midi/midiTimeout';
+import { markLatencyStage } from './latencyDiagnostics';
 
 export { getNoteName };
 export type { MidiMessage };
@@ -271,6 +272,7 @@ export class MidiService {
   // ---- API de envio ----------------------------------------------------
 
   public async sendKeyboardNote(channel: number, note: number, velocity: number, isNoteOn: boolean): Promise<{ hex: string }> {
+    markLatencyStage(isNoteOn && velocity > 0 ? 'midi.sendKeyboardNote' : 'midi.sendKeyboardNoteOff', channel);
     const safeNote = clampInt(note, 0, 127);
     const safeVelocity = clampInt(velocity, 0, 127);
     const on = isNoteOn && safeVelocity > 0;
@@ -368,11 +370,13 @@ export class MidiService {
   }
 
   public routeMessage(status: number, data1: number, data2: number, sourceId?: string): void {
+    markLatencyStage('midi.routeMessage', (status & 0x0f) + 1);
     const command = status & 0xf0;
     const inputChannel = (status & 0x0f) + 1;
     const fromApp = sourceId === VIRTUAL_ID;
 
     this.monitor.pushLog(status, data1, data2, sourceId, fromApp ? 'TX' : 'RX');
+    if (fromApp) markLatencyStage('midi.monitor.pushLog', inputChannel);
     if (command === 0x90 && data2 > 0) this.monitor.notifyActivity(data2);
     this.monitor.notifyTap({ status, data1, data2, sourceId });
 

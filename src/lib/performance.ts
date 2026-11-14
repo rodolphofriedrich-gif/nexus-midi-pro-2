@@ -1,6 +1,7 @@
 import { Arpeggiator } from './arpeggiator';
 import { applyVelocityCurve, type VelocityCurve } from './velocity';
 import { buildChord, quantizeToScale, type ChordId, type ScaleId } from './scales';
+import { markLatencyStage } from '../services/latencyDiagnostics';
 
 const DRUM_CHANNEL = 10;
 
@@ -38,6 +39,7 @@ export class PerformanceEngine {
    *                 Se omitido, cai no comportamento antigo (chave = canal:nota).
    */
   noteOn(channel: number, note: number, baseVelocity: number, sourceId?: string): void {
+    markLatencyStage('performance.noteOn', channel);
     const s = this.deps.getSettings();
     const velocity = applyVelocityCurve(baseVelocity, s.velocityCurve, s.fixedVelocity);
     const key = this.makeKey(channel, note, sourceId);
@@ -65,6 +67,7 @@ export class PerformanceEngine {
    *   3. Fallback (qualquer source, qualquer canal): proteção contra nota presa.
    */
   noteOff(channel: number, note: number, sourceId?: string): void {
+    markLatencyStage('performance.noteOff', channel);
     const exactKey = this.makeKey(channel, note, sourceId);
     if (this.sounding.has(exactKey)) {
       this.releaseKey(exactKey);
