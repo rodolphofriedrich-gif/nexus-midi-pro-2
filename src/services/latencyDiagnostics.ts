@@ -39,6 +39,7 @@ const MAX_EVENTS = 500;
 const MAX_PENDING_PROCESSOR_NOTES = 128;
 const MAX_CONTROLLER_EVENTS = 100;
 let captureEnabled = false;
+const captureListeners = new Set<(enabled: boolean) => void>();
 let nextId = 1;
 let activeTrace: ActiveTrace | null = null;
 const events: LatencyTraceEvent[] = [];
@@ -50,11 +51,19 @@ function clock(): number {
 }
 
 export function setLatencyCaptureEnabled(enabled: boolean): void {
+  if (captureEnabled === enabled) return;
   captureEnabled = enabled;
   if (!enabled) {
     activeTrace = null;
     pendingProcessorNotes.length = 0;
   }
+  captureListeners.forEach((listener) => listener(enabled));
+}
+
+/** Permite ligar os eventos internos do sintetizador apenas durante uma captura de diagnóstico. */
+export function subscribeLatencyCapture(listener: (enabled: boolean) => void): () => void {
+  captureListeners.add(listener);
+  return () => captureListeners.delete(listener);
 }
 
 export function isLatencyCaptureEnabled(): boolean {
