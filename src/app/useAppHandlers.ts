@@ -18,6 +18,7 @@ import { NativeMidi } from '../services/nativeMidi';
 import { performanceEngine } from '../services/performanceService';
 import { prefsStore, type Prefs } from '../services/stores';
 import type { ToastType } from '../hooks/useToast';
+import { audioDiagnostics } from '../services/audio/audioDiagnostics';
 
 type Notify = (text: string, type?: ToastType, durationMs?: number) => void;
 
@@ -40,14 +41,27 @@ export function useAppHandlers({
   firstConnectedDeviceId,
 }: UseAppHandlersArgs) {
   const handleNoteOn = useCallback(
-    (note: number, channel: number, velocity?: number, sourceId?: string) =>
-      performanceEngine.noteOn(channel, note, velocity ?? prefsStore.get().velocity, sourceId),
+    (note: number, channel: number, velocity?: number, sourceId?: string) => {
+      const safeVelocity = velocity ?? prefsStore.get().velocity;
+      const traceId = audioDiagnostics.beginTrace('noteOn', sourceId ?? 'unknown', note, safeVelocity);
+      try {
+        performanceEngine.noteOn(channel, note, safeVelocity, sourceId);
+      } finally {
+        audioDiagnostics.endTrace(traceId);
+      }
+    },
     [],
   );
 
   const handleNoteOff = useCallback(
-    (note: number, channel: number, sourceId?: string) =>
-      performanceEngine.noteOff(channel, note, sourceId),
+    (note: number, channel: number, sourceId?: string) => {
+      const traceId = audioDiagnostics.beginTrace('noteOff', sourceId ?? 'unknown', note);
+      try {
+        performanceEngine.noteOff(channel, note, sourceId);
+      } finally {
+        audioDiagnostics.endTrace(traceId);
+      }
+    },
     [],
   );
 
