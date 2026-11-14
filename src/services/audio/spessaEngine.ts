@@ -161,8 +161,10 @@ export async function createWebAudioBackend(): Promise<SynthBackend> {
       let outputTimestamp: AudioContextDiagnostics['outputTimestamp'] = null;
       try {
         const stamp = audioContext.getOutputTimestamp?.();
-        if (stamp && Number.isFinite(stamp.contextTime) && Number.isFinite(stamp.performanceTime)) {
-          outputTimestamp = { contextTime: stamp.contextTime, performanceTime: stamp.performanceTime };
+        const contextTime = Number(stamp?.contextTime);
+        const performanceTime = Number(stamp?.performanceTime);
+        if (Number.isFinite(contextTime) && Number.isFinite(performanceTime)) {
+          outputTimestamp = { contextTime, performanceTime };
         }
       } catch {
         outputTimestamp = null;
