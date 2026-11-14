@@ -54,6 +54,7 @@ const toCc = (percent: number): number => clampInt(Math.round(percent * 1.27), 0
 export class SynthService {
   private backend: SynthBackend | null = null;
   private backendPromise: Promise<SynthBackend> | null = null;
+  private fxBypass = false;
   private snapshot: SynthSnapshot = { ready: false, loading: false, fileName: null, bankCount: 0 };
   private readonly listeners = new Set<() => void>();
 
@@ -98,6 +99,7 @@ export class SynthService {
       this.backendPromise = this.factory().then(
         (backend) => {
           this.backend = backend;
+          backend.setFxBypass?.(this.fxBypass);
           return backend;
         },
         (error: unknown) => {
@@ -117,6 +119,16 @@ export class SynthService {
   /** Métricas somente de leitura do AudioContext ativo. */
   getAudioDiagnostics(): AudioContextDiagnostics | null {
     return this.backend?.getAudioDiagnostics?.() ?? null;
+  }
+
+  /** Estado do bypass de efeitos master usado no teste A/B de latência. */
+  getFxBypass(): boolean {
+    return this.fxBypass;
+  }
+
+  setFxBypass(enabled: boolean): void {
+    this.fxBypass = enabled;
+    this.backend?.setFxBypass?.(enabled);
   }
 
   /** Resumo exibido na interface: o nome do primeiro SoundFont e quantos mais estão ativos. */
