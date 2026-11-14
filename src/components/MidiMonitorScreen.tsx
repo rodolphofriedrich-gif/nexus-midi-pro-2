@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { tr } from '../i18n';
 import { midiManager } from '../services/midiService';
 import type { MidiLogEntry } from '../types/midi';
-import { clearLatencyTraceEvents, getLatencyCaptureStatus, getLatencyTraceEvents, setLatencyCaptureEnabled } from '../services/latencyDiagnostics';
+import { clearLatencyTraceEvents, getLatencyCaptureStatus, getLatencyTraceEvents, getSynthControllerDiagnosticEvents, setLatencyCaptureEnabled } from '../services/latencyDiagnostics';
 import { synthService } from '../services/synthService';
 
 const TYPE_COLORS: Partial<Record<MidiLogEntry['type'], string>> = {
@@ -85,6 +85,7 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
   const [diagnosticSnapshot, setDiagnosticSnapshot] = useState(() => ({
     events: getLatencyTraceEvents(),
     audio: synthService.getAudioDiagnostics(),
+    synth: synthService.getSynthDiagnostics(),
   }));
   const [copyStatus, setCopyStatus] = useState('');
 
@@ -92,6 +93,7 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
     setDiagnosticSnapshot({
       events: getLatencyTraceEvents(),
       audio: synthService.getAudioDiagnostics(),
+      synth: synthService.getSynthDiagnostics(),
     });
   };
 
@@ -114,8 +116,10 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
     const report = {
       capturedAt: new Date().toISOString(),
       audio: synthService.getAudioDiagnostics(),
+      synth: synthService.getSynthDiagnostics(),
       fxBypass: synthService.getFxBypass(),
       events: getLatencyTraceEvents(),
+      synthControllerEvents: getSynthControllerDiagnosticEvents(),
       monitor: {
         totalEntries: logEntries.length,
         txEntries: logEntries.filter((entry) => entry.direction === 'TX').length,
@@ -176,6 +180,8 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
           <span>Sample rate: {diagnosticSnapshot.audio?.sampleRate ?? '—'} Hz</span>
           <span>Base: {diagnosticSnapshot.audio?.baseLatencyMs ?? '—'} ms</span>
           <span>Saída: {diagnosticSnapshot.audio?.outputLatencyMs ?? '—'} ms</span>
+          <span>Vozes: {diagnosticSnapshot.synth?.voiceCount ?? '—'} / {diagnosticSnapshot.synth?.voiceCap ?? '—'}</span>
+          <span>Interpolação: {diagnosticSnapshot.synth?.interpolationType ?? '—'}</span>
         </div>
         {copyStatus && <p className="mt-1 text-[11px] text-[var(--nexus-accent)]">{copyStatus}</p>}
         {diagnosticSnapshot.events.length > 0 && (
