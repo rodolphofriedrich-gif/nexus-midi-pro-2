@@ -49,10 +49,6 @@ if(NOT TARGET libfluidsynth)
     message(FATAL_ERROR "FluidSynth target libfluidsynth was not created")
 endif()
 
-if(NOT OBOE_SUPPORT)
-    message(FATAL_ERROR "FluidSynth was configured without Oboe support")
-endif()
-
 add_library(nexus_audio SHARED native_audio_probe.cpp)
 
 target_compile_features(nexus_audio PRIVATE cxx_std_17)
