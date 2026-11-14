@@ -1,3 +1,5 @@
+import type { AudioContextDiagnostics } from './latencyDiagnostics';
+
 /**
  * synthTypes — contratos entre SynthService e o backend de áudio (SpessaSynth).
  *
@@ -42,6 +44,7 @@ export interface SynthBackend {
   engine: SynthEngine;
   fx: FxControls;
   resume(): Promise<void>;
+  getAudioDiagnostics?(): AudioContextDiagnostics;
   dispose(): void;
 }
 
