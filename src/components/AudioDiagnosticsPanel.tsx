@@ -55,7 +55,9 @@ export function AudioDiagnosticsPanel() {
             <div>Output latency: {String(runtime.context?.outputLatency ?? '—')} s</div>
             <div>Audio time: {String(runtime.context?.currentTime ?? '—')} s</div>
             <div>Vozes: {String(runtime.synthesizer?.voiceCount ?? '—')}</div>
-            <div>Voice cap: {String(runtime.synthesizer?.voiceCap ?? 'não exposto')}</div>
+            <div>Voice cap: {String(runtime.synthesizer?.voiceCap ?? '—')}</div>
+            <div>Interpolação: {String(runtime.synthesizer?.interpolationType ?? '—')}</div>
+            <div>Efeitos internos Spessa: {String(runtime.synthesizer?.effectsEnabled ?? '—')}</div>
           </div>
           <p className="my-2 text-slate-400">A captura mede etapas JavaScript e o envio ao sintetizador. Não mede diretamente o instante acústico no alto-falante nem o processamento interno de cada bloco do Worklet.</p>
           <div className="flex flex-wrap gap-2">
