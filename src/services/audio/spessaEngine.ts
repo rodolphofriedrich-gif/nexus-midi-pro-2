@@ -2,7 +2,7 @@ import { WorkletSynthesizer } from 'spessasynth_lib';
 import workletUrl from 'spessasynth_lib/dist/spessasynth_processor.min.js?url';
 import type { SynthBackend, SynthEngine } from '../synthTypes';
 import { FxChain } from './fxChain';
-import { markLatencyStage, type AudioContextDiagnostics } from '../latencyDiagnostics';
+import { markLatencyStage, markProcessorNoteOn, recordSynthControllerEvent, registerPendingProcessorNote, type AudioContextDiagnostics } from '../latencyDiagnostics';
 
 /**
  * Superfície do WorkletSynthesizer que o app usa. Declarada aqui para que mudanças de tipagem
@@ -22,6 +22,18 @@ interface SpessaSynthLike {
   stopAll?(force?: boolean): void;
   destroy?(): void;
   isReady?: Promise<unknown>;
+  voiceCount?: number;
+  systemParameters?: {
+    voiceCap?: number;
+    interpolationType?: string;
+    effectsEnabled?: boolean;
+    eventsEnabled?: boolean;
+  };
+  eventHandler?: {
+    addEvent(event: 'noteOn', id: string, callback: (data: { channel: number; midiNote: number }) => unknown): void;
+    addEvent(event: 'controllerChange', id: string, callback: (data: { channel: number; controller: number; value: number }) => unknown): void;
+    removeEvent(event: 'noteOn' | 'controllerChange', id: string): void;
+  };
   soundBankManager: {
     addSoundBank(buffer: ArrayBuffer, id: string, bankOffset?: number): unknown;
     deleteSoundBank?(id: string): unknown;
@@ -36,10 +48,35 @@ class SpessaEngine implements SynthEngine {
   /** Canais atualmente em modo percussão (kits de bateria). */
   private readonly drumChannels = new Set<number>([DEFAULT_DRUM_CHANNEL]);
 
-  constructor(private readonly synth: SpessaSynthLike) {}
+  private readonly noteOnEventId = 'nexus-latency-note-on';
+  private readonly controllerEventId = 'nexus-latency-cc1';
+
+  constructor(private readonly synth: SpessaSynthLike) {
+    // O callback é enviado pelo processador AudioWorklet após receber o Note On.
+    // Ele mede a confirmação assíncrona até o thread principal, não a saída física.
+    this.synth.eventHandler?.addEvent('noteOn', this.noteOnEventId, (event: { channel: number; midiNote: number }) => {
+      markProcessorNoteOn(event.channel + 1, event.midiNote);
+    });
+    // Captura CC1 efetivamente processado pelo sintetizador para investigar modulação involuntária.
+    this.synth.eventHandler?.addEvent('controllerChange', this.controllerEventId, (event: { channel: number; controller: number; value: number }) => {
+      recordSynthControllerEvent(event.channel + 1, event.controller, event.value);
+    });
+  }
+
+  getDiagnostics() {
+    const voiceCount = this.synth.voiceCount;
+    return {
+      voiceCount: typeof voiceCount === 'number' && Number.isFinite(voiceCount) ? voiceCount : null,
+      voiceCap: this.synth.systemParameters?.voiceCap ?? null,
+      interpolationType: this.synth.systemParameters?.interpolationType ?? null,
+      effectsEnabled: this.synth.systemParameters?.effectsEnabled ?? null,
+      eventsEnabled: this.synth.systemParameters?.eventsEnabled ?? null,
+    };
+  }
 
   noteOn(channel: number, note: number, velocity: number): void {
     markLatencyStage('spessa.worklet.noteOn.call', channel + 1);
+    registerPendingProcessorNote(channel + 1, note);
     this.synth.noteOn(channel, note, velocity);
     markLatencyStage('spessa.worklet.noteOn.return', channel + 1);
   }
@@ -105,6 +142,8 @@ class SpessaEngine implements SynthEngine {
   }
 
   dispose(): void {
+    this.synth.eventHandler?.removeEvent('noteOn', this.noteOnEventId);
+    this.synth.eventHandler?.removeEvent('controllerChange', this.controllerEventId);
     try {
       this.synth.destroy?.();
     } catch {
@@ -154,6 +193,7 @@ export async function createWebAudioBackend(): Promise<SynthBackend> {
     resume: async () => {
       if (ctx.state !== 'running') await ctx.resume().catch(() => undefined);
     },
+    getSynthDiagnostics: () => engine.getDiagnostics(),
     getAudioDiagnostics: (): AudioContextDiagnostics => {
       const audioContext = ctx as AudioContext & {
         outputLatency?: number;

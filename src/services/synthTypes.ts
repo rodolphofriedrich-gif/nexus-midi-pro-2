@@ -40,11 +40,20 @@ export interface FxControls {
   setCompressor(thresholdDb: number, ratio: number): void;
 }
 
+export interface SynthDiagnostics {
+  voiceCount: number | null;
+  voiceCap: number | null;
+  interpolationType: string | null;
+  effectsEnabled: boolean | null;
+  eventsEnabled: boolean | null;
+}
+
 export interface SynthBackend {
   engine: SynthEngine;
   fx: FxControls;
   resume(): Promise<void>;
   getAudioDiagnostics?(): AudioContextDiagnostics;
+  getSynthDiagnostics?(): SynthDiagnostics;
   /** Ativa/desativa o bypass temporário da cadeia de efeitos master. */
   setFxBypass?(enabled: boolean): void;
   dispose(): void;
