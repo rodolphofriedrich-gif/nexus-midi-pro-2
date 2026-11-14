@@ -26,6 +26,7 @@
  *   interage — via `sendProgramChange`, `sendPitchBend`, `sendChannelPressure`).
  */
 import { clampInt } from '../lib/midiMath';
+import { markLatencyStage, type AudioContextDiagnostics } from './latencyDiagnostics';
 import type { BackendFactory, ChannelSettings, GlobalSettings, SynthBackend, SynthSettings } from './synthTypes';
 
 export interface SynthSnapshot {
@@ -111,6 +112,11 @@ export class SynthService {
   /** Retoma o AudioContext (navegadores exigem um gesto do usuário). */
   async resume(): Promise<void> {
     await this.backend?.resume();
+  }
+
+  /** Métricas somente de leitura do AudioContext ativo. */
+  getAudioDiagnostics(): AudioContextDiagnostics | null {
+    return this.backend?.getAudioDiagnostics?.() ?? null;
   }
 
   /** Resumo exibido na interface: o nome do primeiro SoundFont e quantos mais estão ativos. */
@@ -209,6 +215,7 @@ export class SynthService {
   }
 
   noteOn(note: number, velocity: number, channel = 1): void {
+    markLatencyStage('synthService.noteOn', channel);
     const engine = this.backend?.engine;
     if (!this.snapshot.ready || !engine) return;
     void this.backend?.resume();
@@ -236,7 +243,9 @@ export class SynthService {
     const shift = this.isDrumChannel(ch) ? 0 : (this.channelTranspose.get(ch) ?? this.transpose);
     const sounding = clampInt(original + shift, 0, 127);
     this.active.set(key, sounding);
+    markLatencyStage('synthService.beforeEngineNoteOn', channel);
     engine.noteOn(ch, sounding, clampInt(velocity, 1, 127));
+    markLatencyStage('synthService.afterEngineNoteOn', channel);
   }
 
   noteOff(note: number, channel = 1): void {
