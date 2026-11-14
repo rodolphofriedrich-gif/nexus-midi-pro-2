@@ -169,7 +169,9 @@ export async function createWebAudioBackend(): Promise<SynthBackend> {
       },
       synthesizer: {
         voiceCount: synth.voiceCount ?? null,
-        voiceCap: system.voiceCap ?? system.polyphony ?? null,
+        voiceCap: system.voiceCap ?? null,
+        interpolationType: system.interpolationType ?? null,
+        effectsEnabled: system.effectsEnabled ?? null,
         systemParameters: system,
         midiParameters: synth.midiParameters ?? null,
       },
