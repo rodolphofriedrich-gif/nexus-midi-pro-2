@@ -2,6 +2,7 @@ import { WorkletSynthesizer } from 'spessasynth_lib';
 import workletUrl from 'spessasynth_lib/dist/spessasynth_processor.min.js?url';
 import type { SynthBackend, SynthEngine } from '../synthTypes';
 import { FxChain } from './fxChain';
+import { audioDiagnostics } from './audioDiagnostics';
 
 /**
  * Superfície do WorkletSynthesizer que o app usa. Declarada aqui para que mudanças de tipagem
@@ -21,6 +22,9 @@ interface SpessaSynthLike {
   stopAll?(force?: boolean): void;
   destroy?(): void;
   isReady?: Promise<unknown>;
+  voiceCount?: number;
+  systemParameters?: Record<string, unknown>;
+  midiParameters?: Record<string, unknown>;
   soundBankManager: {
     addSoundBank(buffer: ArrayBuffer, id: string, bankOffset?: number): unknown;
     deleteSoundBank?(id: string): unknown;
@@ -38,10 +42,15 @@ class SpessaEngine implements SynthEngine {
   constructor(private readonly synth: SpessaSynthLike) {}
 
   noteOn(channel: number, note: number, velocity: number): void {
+    audioDiagnostics.mark('spessasynth.noteOn.call.begin', { channel, note, velocity });
     this.synth.noteOn(channel, note, velocity);
+    // A chamada retornou; o Worklet não fornece confirmação por nota processada.
+    audioDiagnostics.mark('spessasynth.noteOn.call.return', { channel, note });
   }
   noteOff(channel: number, note: number): void {
+    audioDiagnostics.mark('spessasynth.noteOff.call.begin', { channel, note });
     this.synth.noteOff(channel, note);
+    audioDiagnostics.mark('spessasynth.noteOff.call.return', { channel, note });
   }
   controlChange(channel: number, controller: number, value: number): void {
     this.synth.controllerChange(channel, controller, value);
@@ -144,6 +153,28 @@ export async function createWebAudioBackend(): Promise<SynthBackend> {
   synth.connect(fx.input);
 
   const engine = new SpessaEngine(synth);
+  audioDiagnostics.setRuntimeReader(() => {
+    const timestamp = typeof ctx.getOutputTimestamp === 'function' ? ctx.getOutputTimestamp() : null;
+    const system = synth.systemParameters ?? {};
+    return {
+      capturedAt: new Date().toISOString(),
+      context: {
+        state: ctx.state,
+        sampleRate: ctx.sampleRate,
+        currentTime: ctx.currentTime,
+        baseLatency: ctx.baseLatency,
+        outputLatency: (ctx as AudioContext & { outputLatency?: number }).outputLatency ?? null,
+        latencyHint: 'interactive',
+        outputTimestamp: timestamp,
+      },
+      synthesizer: {
+        voiceCount: synth.voiceCount ?? null,
+        voiceCap: system.voiceCap ?? system.polyphony ?? null,
+        systemParameters: system,
+        midiParameters: synth.midiParameters ?? null,
+      },
+    };
+  });
   return {
     engine,
     fx,
@@ -151,6 +182,7 @@ export async function createWebAudioBackend(): Promise<SynthBackend> {
       if (ctx.state !== 'running') await ctx.resume().catch(() => undefined);
     },
     dispose: () => {
+      audioDiagnostics.setRuntimeReader(null);
       engine.dispose();
       fx.dispose();
       void ctx.close().catch(() => undefined);
