@@ -15,7 +15,23 @@ android {
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
+        // Primeira prova de compilação nativa: Galaxy A54 (ARM64).
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
     }
+    // Backend nativo experimental: FluidSynth 2.6.2 com driver Oboe.
+    ndkVersion "27.2.12479018"
+    buildFeatures {
+        prefab true
+    }
+    externalNativeBuild {
+        cmake {
+            path file("src/main/cpp/CMakeLists.txt")
+            version "3.22.1"
+        }
+    }
+
     // Assinatura do release: configurada por variáveis de ambiente (GitHub Secrets). Sem elas,
     // o `assembleRelease` gera um APK não assinado, que o Android não instala.
     signingConfigs {
@@ -54,6 +70,9 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Prefab fornece o pacote CMake oboe::oboe ao build nativo do FluidSynth.
+    implementation "com.google.oboe:oboe:1.11.0"
 }
 
 apply from: 'capacitor.build.gradle'
