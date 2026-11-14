@@ -81,6 +81,7 @@ function getSnapshotThrottled(): readonly MidiLogEntry[] {
 export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
   const log = useSyncExternalStore(subscribeThrottled, getSnapshotThrottled, getSnapshotThrottled);
   const [captureEnabled, setCaptureEnabled] = useState(getLatencyCaptureStatus());
+  const [fxBypass, setFxBypass] = useState(synthService.getFxBypass());
   const [diagnosticSnapshot, setDiagnosticSnapshot] = useState(() => ({
     events: getLatencyTraceEvents(),
     audio: synthService.getAudioDiagnostics(),
@@ -92,6 +93,13 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
       events: getLatencyTraceEvents(),
       audio: synthService.getAudioDiagnostics(),
     });
+  };
+
+  const toggleFxBypass = () => {
+    const next = !fxBypass;
+    synthService.setFxBypass(next);
+    setFxBypass(next);
+    refreshDiagnostics();
   };
 
   const toggleCapture = () => {
@@ -106,6 +114,7 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
     const report = {
       capturedAt: new Date().toISOString(),
       audio: synthService.getAudioDiagnostics(),
+      fxBypass: synthService.getFxBypass(),
       events: getLatencyTraceEvents(),
       monitor: {
         totalEntries: logEntries.length,
@@ -145,9 +154,12 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--nexus-primary)]">Diagnóstico de latência</p>
-            <p className="text-[11px] text-[var(--text-muted)]">Captura temporária do caminho toque → MIDI → SpessaSynth</p>
+            <p className="text-[11px] text-[var(--text-muted)]">Captura toque → MIDI → SpessaSynth; bypass testa delay/EQ/compressor master</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={toggleFxBypass} className="rounded-lg border border-[var(--nexus-primary)] px-3 py-2 text-xs font-bold text-[var(--nexus-primary)]">
+              FX master: {fxBypass ? 'BYPASS' : 'normal'}
+            </button>
             <button type="button" onClick={toggleCapture} className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-bold text-[var(--text-main)]">
               {captureEnabled ? 'Parar captura' : 'Iniciar captura'}
             </button>
@@ -158,6 +170,7 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
         </div>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] text-[var(--text-muted)]">
           <span>Captura: {captureEnabled ? 'ATIVA' : 'parada'}</span>
+          <span>Cadeia FX: {fxBypass ? 'bypass' : 'normal'}</span>
           <span>Eventos: {diagnosticSnapshot.events.length}</span>
           <span>AudioContext: {diagnosticSnapshot.audio?.state ?? 'indisponível'}</span>
           <span>Sample rate: {diagnosticSnapshot.audio?.sampleRate ?? '—'} Hz</span>

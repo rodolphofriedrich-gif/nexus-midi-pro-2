@@ -45,6 +45,8 @@ export interface SynthBackend {
   fx: FxControls;
   resume(): Promise<void>;
   getAudioDiagnostics?(): AudioContextDiagnostics;
+  /** Ativa/desativa o bypass temporário da cadeia de efeitos master. */
+  setFxBypass?(enabled: boolean): void;
   dispose(): void;
 }
 
