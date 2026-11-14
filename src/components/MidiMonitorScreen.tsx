@@ -154,11 +154,11 @@ export function MidiMonitorScreen({ maxVisible = 150, filter, paused }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--nexus-primary)]">Diagnóstico de latência</p>
-            <p className="text-[11px] text-[var(--text-muted)]">Captura temporária do caminho toque → MIDI → SpessaSynth</p>
+            <p className="text-[11px] text-[var(--text-muted)]">Captura toque → MIDI → SpessaSynth; bypass testa delay/EQ/compressor master</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={toggleFxBypass} className="rounded-lg border border-[var(--nexus-primary)] px-3 py-2 text-xs font-bold text-[var(--nexus-primary)]">
-              FX: {fxBypass ? 'BYPASS ATIVO' : 'normal'}
+              FX master: {fxBypass ? 'BYPASS' : 'normal'}
             </button>
             <button type="button" onClick={toggleCapture} className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-bold text-[var(--text-main)]">
               {captureEnabled ? 'Parar captura' : 'Iniciar captura'}
