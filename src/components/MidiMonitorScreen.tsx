@@ -53,12 +53,15 @@ function commitAndNotify(): void {
 
 function subscribeThrottled(cb: () => void): () => void {
   pendingNotify = cb;
-  // Inicializa o cache na primeira montagem, lendo o log atual (pode ter
-  // mensagens acumuladas antes do Monitor abrir — não queremos perder).
-  if (committedLog === null) committedLog = midiManager.getLog();
+  // A tela é desmontada ao sair da aba MIDI. Sincroniza sempre o cache na
+  // remontagem para incluir mensagens recebidas enquanto o Monitor estava fechado.
+  const latestLog = midiManager.getLog();
+  const snapshotChanged = committedLog !== latestLog;
+  committedLog = latestLog;
   const unsubscribe = midiManager.subscribeLog(() => {
     if (rafId === null) rafId = requestAnimationFrame(commitAndNotify);
   });
+  if (snapshotChanged) cb();
   return () => {
     unsubscribe();
     if (rafId !== null) {
