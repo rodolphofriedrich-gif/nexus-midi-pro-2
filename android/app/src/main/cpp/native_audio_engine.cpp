@@ -12,16 +12,19 @@ fluid_synth_t* g_synth = nullptr;
 fluid_audio_driver_t* g_driver = nullptr;
 std::unordered_map<std::string, int> g_soundfonts;
 int g_default_sfid = -1;
+std::string g_last_error = "Nenhum erro nativo registrado";
 
 bool ensureEngine() {
     if (g_synth != nullptr && g_driver != nullptr) return true;
 
+    g_last_error.clear();
     g_settings = new_fluid_settings();
-    if (g_settings == nullptr) return false;
+    if (g_settings == nullptr) { g_last_error = "FluidSynth não criou as configurações"; return false; }
 
     if (fluid_settings_setstr(g_settings, "audio.driver", "oboe") != FLUID_OK) {
         delete_fluid_settings(g_settings);
         g_settings = nullptr;
+        g_last_error = "FluidSynth não reconheceu o driver de áudio Oboe";
         return false;
     }
 
@@ -29,6 +32,7 @@ bool ensureEngine() {
     if (g_synth == nullptr) {
         delete_fluid_settings(g_settings);
         g_settings = nullptr;
+        g_last_error = "FluidSynth não conseguiu criar o sintetizador";
         return false;
     }
 
@@ -38,8 +42,10 @@ bool ensureEngine() {
         delete_fluid_settings(g_settings);
         g_synth = nullptr;
         g_settings = nullptr;
+        g_last_error = "FluidSynth não conseguiu iniciar a saída de áudio Oboe";
         return false;
     }
+    g_last_error.clear();
     return true;
 }
 
@@ -76,7 +82,8 @@ Java_com_midi_controller_keyboard_plugins_NativeAudioPlugin_nativeLoadSoundFont(
     }
 
     const int sfid = fluid_synth_sfload(g_synth, path.c_str(), 1);
-    if (sfid == FLUID_FAILED) return -1;
+    if (sfid == FLUID_FAILED) { g_last_error = "fluid_synth_sfload retornou FLUID_FAILED ao interpretar o SF2"; return -1; }
+    g_last_error.clear();
 
     g_soundfonts[id] = sfid;
     if (g_default_sfid < 0) g_default_sfid = sfid;
@@ -179,4 +186,10 @@ Java_com_midi_controller_keyboard_plugins_NativeAudioPlugin_nativeDispose(JNIEnv
     }
     g_soundfonts.clear();
     g_default_sfid = -1;
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_midi_controller_keyboard_plugins_NativeAudioPlugin_nativeGetLastError(JNIEnv* env, jclass) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    return env->NewStringUTF(g_last_error.empty() ? "Sem detalhe adicional" : g_last_error.c_str());
 }
