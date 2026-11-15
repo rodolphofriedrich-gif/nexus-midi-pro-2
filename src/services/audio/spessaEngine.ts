@@ -38,7 +38,7 @@ interface SpessaSynthLike {
     effectsEnabled?: boolean;
     eventsEnabled?: boolean;
   };
-  setSystemParameter?(parameter: 'eventsEnabled' | 'interpolationType', value: boolean | number): void;
+  setSystemParameter?(parameter: 'eventsEnabled' | 'interpolationType' | 'effectsEnabled', value: boolean | number): void;
   eventHandler?: {
     addEvent(event: 'noteOn', id: string, callback: (data: { channel: number; midiNote: number }) => unknown): void;
     addEvent(event: 'controllerChange', id: string, callback: (data: { channel: number; controller: number; value: number }) => unknown): void;
@@ -220,6 +220,11 @@ export async function createWebAudioBackend(): Promise<SynthBackend> {
   // O valor 0 é documentado pelo SpessaSynth como rápido/qualidade média.
   if (Capacitor.getPlatform() === 'android') {
     synth.setSystemParameter?.('interpolationType', 0);
+
+    // Experimento isolado: desativa os efeitos INTERNOS do SpessaSynth no Android.
+    // Não altera o FxChain externo. O diagnóstico deve refletir effectsEnabled=false.
+    // Esta alteração é temporária para comparar o custo dos efeitos internos.
+    synth.setSystemParameter?.('effectsEnabled', false);
   }
 
   const fx = new FxChain(ctx, ctx.destination);
