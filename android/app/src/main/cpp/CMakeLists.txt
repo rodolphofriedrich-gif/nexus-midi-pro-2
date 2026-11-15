@@ -1,0 +1,38 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(NexusNativeAudio LANGUAGES C CXX)
+include(FetchContent)
+find_package(oboe CONFIG REQUIRED)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build FluidSynth as a shared library" FORCE)
+set(enable-oboe ON CACHE BOOL "Enable FluidSynth Oboe driver" FORCE)
+set(enable-alsa OFF CACHE BOOL "" FORCE)
+set(enable-aufile OFF CACHE BOOL "" FORCE)
+set(enable-dbus OFF CACHE BOOL "" FORCE)
+set(enable-jack OFF CACHE BOOL "" FORCE)
+set(enable-ladspa OFF CACHE BOOL "" FORCE)
+set(enable-libsndfile OFF CACHE BOOL "" FORCE)
+set(enable-midishare OFF CACHE BOOL "" FORCE)
+set(enable-opensles OFF CACHE BOOL "" FORCE)
+set(enable-network OFF CACHE BOOL "" FORCE)
+set(enable-oss OFF CACHE BOOL "" FORCE)
+set(enable-pipewire OFF CACHE BOOL "" FORCE)
+set(enable-pulseaudio OFF CACHE BOOL "" FORCE)
+set(enable-readline OFF CACHE BOOL "" FORCE)
+set(enable-sdl3 OFF CACHE BOOL "" FORCE)
+set(enable-native-dls OFF CACHE BOOL "" FORCE)
+set(enable-signalsmith OFF CACHE BOOL "" FORCE)
+set(enable-openmp OFF CACHE BOOL "" FORCE)
+set(enable-threads ON CACHE BOOL "" FORCE)
+FetchContent_Declare(FluidSynth
+    GIT_REPOSITORY https://github.com/FluidSynth/fluidsynth.git
+    GIT_TAG v2.6.2
+    GIT_SHALLOW TRUE
+    GIT_SUBMODULES gcem
+    GIT_SUBMODULES_RECURSE TRUE
+)
+FetchContent_MakeAvailable(FluidSynth)
+if(NOT TARGET libfluidsynth)
+    message(FATAL_ERROR "FluidSynth target libfluidsynth was not created")
+endif()
+add_library(nexus_audio SHARED native_audio_probe.cpp native_audio_engine.cpp)
+target_compile_features(nexus_audio PRIVATE cxx_std_17)
+target_link_libraries(nexus_audio PRIVATE libfluidsynth)
