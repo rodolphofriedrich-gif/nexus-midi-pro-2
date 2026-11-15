@@ -8,6 +8,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import com.midi.controller.keyboard.plugins.NativeMidiPlugin;
+import com.midi.controller.keyboard.plugins.NativeAudioPlugin;
 
 public class MainActivity extends BridgeActivity {
 
@@ -15,6 +16,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // REGRA DO CAPACITOR: Registrar plugins ANTES do super.onCreate
         registerPlugin(NativeMidiPlugin.class);
+        registerPlugin(NativeAudioPlugin.class);
 
         super.onCreate(savedInstanceState);
 
