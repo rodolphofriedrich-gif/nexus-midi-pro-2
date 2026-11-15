@@ -56,6 +56,7 @@ export class SynthService {
   private backendPromise: Promise<SynthBackend> | null = null;
   private snapshot: SynthSnapshot = { ready: false, loading: false, fileName: null, bankCount: 0 };
   private readonly listeners = new Set<() => void>();
+  private lastLoadError: string | null = null;
 
   /** `canal:nota` tocada → nota realmente enviada ao motor (mantém a ordem de chegada). */
   private readonly active = new Map<string, number>();
@@ -89,6 +90,11 @@ export class SynthService {
 
   getCurrentFileName(): string | null {
     return this.snapshot.fileName;
+  }
+
+  /** Detalhe da última falha ao carregar um SoundFont, para a interface não ocultar o erro real. */
+  getLastLoadError(): string | null {
+    return this.lastLoadError;
   }
 
   // ---- ciclo de vida ----
@@ -132,6 +138,7 @@ export class SynthService {
 
   /** Adiciona um SoundFont. Vários podem ficar ativos ao mesmo tempo. */
   async addSoundBank(id: string, buffer: ArrayBuffer, name: string): Promise<boolean> {
+    this.lastLoadError = null;
     this.update({ loading: true });
     try {
       const backend = await this.ensureBackend();
@@ -139,9 +146,14 @@ export class SynthService {
       await backend.engine.addSoundBank(id, buffer, name);
       this.banks.set(id, name);
       this.reapplyPrograms(backend);
+      this.lastLoadError = null;
       this.publishBanks({ loading: false });
       return true;
     } catch (error) {
+      const detail = error && typeof error === 'object' && 'message' in error
+        ? String((error as { message?: unknown }).message ?? '')
+        : error instanceof Error ? error.message : String(error);
+      this.lastLoadError = detail || 'O motor de áudio retornou um erro sem detalhes.';
       console.error('Erro ao carregar SoundFont:', error);
       this.update({ loading: false });
       return false;
