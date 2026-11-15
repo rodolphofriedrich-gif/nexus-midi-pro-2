@@ -23,6 +23,7 @@ public class NativeAudioPlugin extends Plugin {
     private final Map<String, File> uploads = new ConcurrentHashMap<>();
     private native boolean nativeInitialize();
     private static native int nativeLoadSoundFont(String id, String path);
+    private static native String nativeGetLastError();
     private static native boolean nativeUnloadSoundFont(String id);
     private static native void nativeNoteOn(int channel, int note, int velocity);
     private static native void nativeNoteOff(int channel, int note);
@@ -85,7 +86,10 @@ public class NativeAudioPlugin extends Plugin {
         }
         int sfid = nativeLoadSoundFont(id, file.getAbsolutePath());
         if (sfid < 0) {
-            call.reject("FluidSynth não conseguiu carregar o SoundFont");
+            String detail = nativeGetLastError();
+            long bytes = file.length();
+            file.delete();
+            call.reject("FluidSynth não conseguiu carregar o SoundFont (" + bytes + " bytes). " + detail);
             return;
         }
         file.delete();
@@ -167,7 +171,7 @@ public class NativeAudioPlugin extends Plugin {
     @PluginMethod
     public void resume(PluginCall call) {
         if (!nativeInitialize()) {
-            call.reject("Motor de áudio nativo indisponível");
+            call.reject("Motor de áudio nativo indisponível. " + nativeGetLastError());
             return;
         }
         call.resolve();
