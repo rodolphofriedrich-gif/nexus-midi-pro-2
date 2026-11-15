@@ -17,6 +17,7 @@ interface SynthLoader {
   addSoundBank(id: string, buffer: ArrayBuffer, name: string): Promise<boolean>;
   removeSoundBank(id: string): Promise<void>;
   setSoundBankOrder(ids: string[]): void;
+  getLastLoadError?(): string | null;
 }
 
 interface LibraryPrefs {
@@ -186,7 +187,10 @@ export class SoundFontLibrary {
         }
         if (!(await this.synth.addSoundBank(id, data, name ?? id))) {
           allOk = false;
-          this.update({ error: 'O motor de áudio não conseguiu carregar este arquivo.' });
+          const detail = this.synth.getLastLoadError?.();
+          this.update({ error: detail
+            ? `Falha ao carregar "${name ?? id}": ${detail}`
+            : 'O motor de áudio não conseguiu carregar este arquivo. Consulte o log para mais detalhes.' });
           continue;
         }
         this.loaded.add(id);

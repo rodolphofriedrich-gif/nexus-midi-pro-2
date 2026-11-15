@@ -58,7 +58,8 @@ jobs:
   android:
     name: Build Android
     needs: check
-    if: github.event_name != 'pull_request'
+    # Native backend branch: build the APK in PRs so CMake/JNI are validated.
+    if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'experiment/native-audio-')
     runs-on: ubuntu-latest
     permissions:
       contents: write # necessário para criar o Release

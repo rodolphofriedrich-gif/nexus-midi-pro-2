@@ -7,6 +7,8 @@ android {
         applicationId "com.midi.controller.keyboard"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        ndk { abiFilters 'arm64-v8a' }
+        externalNativeBuild { cmake { arguments '-DANDROID_STL=c++_shared' } }
         // O CI define VERSION_CODE/VERSION_NAME; localmente valem os padrões abaixo.
         versionCode Integer.parseInt(System.getenv("VERSION_CODE") ?: "1")
         versionName System.getenv("VERSION_NAME") ?: "1.0.0"
@@ -16,6 +18,10 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    ndkVersion '27.2.12479018'
+    buildFeatures { prefab true }
+    externalNativeBuild { cmake { path file('src/main/cpp/CMakeLists.txt'); version '3.22.1' } }
+
     // Assinatura do release: configurada por variáveis de ambiente (GitHub Secrets). Sem elas,
     // o `assembleRelease` gera um APK não assinado, que o Android não instala.
     signingConfigs {
@@ -54,6 +60,7 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
     implementation project(':capacitor-cordova-android-plugins')
+    implementation 'com.google.oboe:oboe:1.11.0'
 }
 
 apply from: 'capacitor.build.gradle'
