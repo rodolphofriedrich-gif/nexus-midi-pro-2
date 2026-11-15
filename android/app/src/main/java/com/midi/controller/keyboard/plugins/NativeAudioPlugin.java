@@ -34,14 +34,6 @@ public class NativeAudioPlugin extends Plugin {
     private static native void nativeAllSoundOff();
     private static native void nativeDispose();
 
-    @Override
-    public void load() {
-        super.load();
-        if (!nativeInitialize()) {
-            android.util.Log.e("NexusNativeAudio", "FluidSynth/Oboe initialization failed");
-        }
-    }
-
     @PluginMethod
     public void beginSoundFontUpload(PluginCall call) {
         String id = call.getString("id");
