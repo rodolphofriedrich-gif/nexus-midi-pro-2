@@ -25,6 +25,7 @@
  *   (são enviados explicitamente pelo `MidiControlsScreen` quando o usuário
  *   interage — via `sendProgramChange`, `sendPitchBend`, `sendChannelPressure`).
  */
+import { Capacitor } from '@capacitor/core';
 import { clampInt } from '../lib/midiMath';
 import type { BackendFactory, ChannelSettings, GlobalSettings, SynthBackend, SynthSettings } from './synthTypes';
 
@@ -397,6 +398,10 @@ export class SynthService {
 
 /** Instância usada pelo app. O backend real (SpessaSynth) só é carregado no primeiro uso. */
 export const synthService = new SynthService(async () => {
+  if (Capacitor.getPlatform() === 'android') {
+    const { createNativeAudioBackend } = await import('./audio/nativeAudioEngine');
+    return createNativeAudioBackend();
+  }
   const { createWebAudioBackend } = await import('./audio/spessaEngine');
   return createWebAudioBackend();
 });
